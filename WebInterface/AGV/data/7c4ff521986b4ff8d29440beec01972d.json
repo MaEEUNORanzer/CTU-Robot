@@ -1,0 +1,363 @@
+{
+  "email": "demo@example.com",
+  "created_at": "2024-01-15T10:30:00",
+  "updated_at": "2024-01-15T14:45:30",
+  "system": {
+    "total_agvs": 15,
+    "running_agvs": 8,
+    "idle_agvs": 5,
+    "warning_agvs": 2,
+    "total_tasks": 156,
+    "completed_today": 23,
+    "system_status": "online",
+    "components": [
+      {
+        "name": "调度中心",
+        "status": "online",
+        "cpu": 42,
+        "memory": 65,
+        "queue": 8,
+        "response_time": "≤50ms",
+        "description": "任务调度和路径规划"
+      },
+      {
+        "name": "通信网关",
+        "status": "online",
+        "connections": 15,
+        "latency": "≤20ms",
+        "bandwidth": 32,
+        "packet_loss": "0.1%",
+        "description": "AGV通信控制"
+      },
+      {
+        "name": "数据存储",
+        "status": "online",
+        "storage": 78,
+        "io_latency": "≤5ms",
+        "queries": 124,
+        "backup_status": "normal",
+        "description": "系统数据存储"
+      }
+    ]
+  },
+  "agvs": [
+    {
+      "id": "AGV-01",
+      "name": "精拣号",
+      "model": "X1-2000",
+      "status": "running",
+      "battery": 85,
+      "speed": 1.2,
+      "tasks_completed": 142,
+      "location": "货架B6区域",
+      "temperature": 32.5,
+      "last_maintenance": "2024-01-10",
+      "current_task": "Task-001"
+    },
+    {
+      "id": "AGV-02",
+      "name": "迅捷二号",
+      "model": "X1-2000",
+      "status": "pending",
+      "battery": 92,
+      "speed": 0,
+      "tasks_completed": 118,
+      "location": "充电站",
+      "temperature": 28.1,
+      "last_maintenance": "2024-01-12",
+      "current_task": "Task-002"
+    },
+    {
+      "id": "AGV-03",
+      "name": "大力三号",
+      "model": "X2-3000",
+      "status": "completed",
+      "battery": 45,
+      "speed": 0,
+      "tasks_completed": 203,
+      "location": "仓库D",
+      "temperature": 31.8,
+      "last_maintenance": "2024-01-08",
+      "current_task": null
+    },
+    {
+      "id": "AGV-04",
+      "name": "精准四号",
+      "model": "X2-3000",
+      "status": "running",
+      "battery": 72,
+      "speed": 1.0,
+      "tasks_completed": 89,
+      "location": "装载区",
+      "temperature": 29.5,
+      "last_maintenance": "2024-01-13",
+      "current_task": "Task-004"
+    },
+    {
+      "id": "AGV-05",
+      "name": "稳定五号",
+      "model": "X1-2000",
+      "status": "warning",
+      "battery": 18,
+      "speed": 0.5,
+      "tasks_completed": 176,
+      "location": "走廊B",
+      "temperature": 36.2,
+      "last_maintenance": "2024-01-05",
+      "current_task": "Task-005",
+      "warning_reason": "电池电量低"
+    },
+    {
+      "id": "AGV-06",
+      "name": "牛马李浩",
+      "model": "X1-2000",
+      "status": "warning",
+      "battery": 18,
+      "speed": 0.5,
+      "tasks_completed": 176,
+      "location": "走廊B",
+      "temperature": 36.2,
+      "last_maintenance": "2024-01-05",
+      "current_task": "Task-005",
+      "warning_reason": "没电"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "Task-001",
+      "agv_id": "AGV-01",
+      "agv_name": "小旋风一号",
+      "from": "仓库A",
+      "to": "货架B3",
+      "status": "running",
+      "progress": 65,
+      "start_time": "12:34",
+      "eta": "5min",
+      "priority": "high",
+      "type": "取货",
+      "weight": 150,
+      "distance": 230,
+      "created_at": "2024-01-15T12:30:00"
+    },
+    {
+      "id": "Task-002",
+      "agv_id": "AGV-02",
+      "agv_name": "迅捷二号",
+      "from": "货架C2",
+      "to": "装载区",
+      "status": "pending",
+      "progress": 0,
+      "start_time": "13:15",
+      "eta": "12min",
+      "priority": "normal",
+      "type": "送货",
+      "weight": 200,
+      "distance": 180,
+      "created_at": "2024-01-15T13:00:00"
+    },
+    {
+      "id": "Task-003",
+      "agv_id": "AGV-03",
+      "agv_name": "大力三号",
+      "from": "接收区",
+      "to": "仓库D",
+      "status": "completed",
+      "progress": 100,
+      "start_time": "11:50",
+      "duration": "8min",
+      "priority": "normal",
+      "type": "入库",
+      "weight": 300,
+      "distance": 150,
+      "created_at": "2024-01-15T11:45:00",
+      "completed_at": "2024-01-15T11:58:00"
+    },
+    {
+      "id": "Task-004",
+      "agv_id": "AGV-04",
+      "agv_name": "精准四号",
+      "from": "仓库B",
+      "to": "装配线",
+      "status": "running",
+      "progress": 30,
+      "start_time": "13:45",
+      "eta": "8min",
+      "priority": "high",
+      "type": "配送",
+      "weight": 100,
+      "distance": 120,
+      "created_at": "2024-01-15T13:40:00"
+    },
+    {
+      "id": "Task-005",
+      "agv_id": "AGV-05",
+      "agv_name": "稳定五号",
+      "from": "货架A1",
+      "to": "包装区",
+      "status": "warning",
+      "progress": 45,
+      "start_time": "13:20",
+      "eta": "15min",
+      "priority": "low",
+      "type": "取货",
+      "weight": 80,
+      "distance": 90,
+      "created_at": "2024-01-15T13:15:00",
+      "warning": "电池电量低"
+    }
+  ],
+  "history": [
+    {
+      "id": "hist-001",
+      "event": "任务完成",
+      "agv_id": "AGV-01",
+      "agv_name": "小旋风一号",
+      "from_to": "仓库A → 货架B3",
+      "status": "completed",
+      "time": "12:34",
+      "details": "货物已安全送达"
+    },
+    {
+      "id": "hist-002",
+      "event": "任务开始",
+      "agv_id": "AGV-02",
+      "agv_name": "迅捷二号",
+      "from_to": "货架C2 → 装载区",
+      "status": "running",
+      "time": "13:15",
+      "details": "开始执行取货任务"
+    },
+    {
+      "id": "hist-003",
+      "event": "任务失败",
+      "agv_id": "AGV-03",
+      "agv_name": "大力三号",
+      "from_to": "接收区 → 仓库D",
+      "status": "failed",
+      "time": "11:50",
+      "details": "路径受阻，自动重试成功"
+    },
+    {
+      "id": "hist-004",
+      "event": "系统警告",
+      "agv_id": "AGV-05",
+      "agv_name": "稳定五号",
+      "from_to": "货架A1 → 包装区",
+      "status": "warning",
+      "time": "13:20",
+      "details": "电池电量低于20%"
+    },
+    {
+      "id": "hist-005",
+      "event": "AGV上线",
+      "agv_id": "AGV-04",
+      "agv_name": "精准四号",
+      "from_to": "",
+      "status": "online",
+      "time": "10:15",
+      "details": "AGV完成充电并上线"
+    },
+    {
+      "id": "event-001",
+      "event": "系统更新",
+      "agv_id": "系统",
+      "agv_name": "",
+      "from_to": "地图服务升级",
+      "status": "info",
+      "time": "10:20",
+      "details": "地图服务升级到v2.3.1"
+    },
+    {
+      "id": "event-002",
+      "event": "维护完成",
+      "agv_id": "AGV-01",
+      "agv_name": "小旋风一号",
+      "from_to": "例行维护",
+      "status": "info",
+      "time": "09:30",
+      "details": "完成每周例行维护"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-001",
+      "type": "warning",
+      "title": "电池电量低",
+      "message": "AGV-05电池电量低于20%，建议充电",
+      "time": "5分钟前",
+      "read": false,
+      "priority": "high"
+    },
+    {
+      "id": "notif-002",
+      "type": "info",
+      "title": "区域拥堵",
+      "message": "货架B3区域出现拥堵，建议调整路径",
+      "time": "15分钟前",
+      "read": true,
+      "priority": "medium"
+    },
+    {
+      "id": "notif-003",
+      "type": "success",
+      "title": "任务完成",
+      "message": "任务#004已完成，耗时8分钟",
+      "time": "30分钟前",
+      "read": true,
+      "priority": "low"
+    },
+    {
+      "id": "notif-004",
+      "type": "info",
+      "title": "新任务分配",
+      "message": "新任务Task-006已分配给AGV-02",
+      "time": "1小时前",
+      "read": true,
+      "priority": "medium"
+    },
+    {
+      "id": "notif-005",
+      "type": "warning",
+      "title": "网络延迟",
+      "message": "通信网关延迟增加，当前延迟45ms",
+      "time": "2小时前",
+      "read": true,
+      "priority": "medium"
+    }
+  ],
+  "warehouse": {
+    "name": "智能仓储中心A",
+    "zones": ["A区", "B区", "C区", "D区", "装配区", "包装区", "装载区", "接收区"],
+    "total_shelves": 156,
+    "occupied_shelves": 128,
+    "temperature": 22.5,
+    "humidity": 45
+  },
+  "statistics": {
+    "today": {
+      "tasks_completed": 23,
+      "distance_traveled": 2850,
+      "avg_task_time": "8.5min",
+      "energy_consumed": 156
+    },
+    "week": {
+      "tasks_completed": 156,
+      "distance_traveled": 18920,
+      "avg_task_time": "7.8min",
+      "energy_consumed": 1023
+    },
+    "month": {
+      "tasks_completed": 642,
+      "distance_traveled": 78200,
+      "avg_task_time": "7.2min",
+      "energy_consumed": 4250
+    }
+  },
+  "settings": {
+    "theme": "dark",
+    "language": "zh-CN",
+    "refresh_rate": 5,
+    "notifications_enabled": true,
+    "auto_save": true
+  }
+}

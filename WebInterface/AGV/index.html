@@ -1,0 +1,2244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AGV仓储机器人调度系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #1a1d21;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            display: none; /* 默认隐藏，登录后显示 */
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* 登录界面 */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1d21 0%, #23272a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .login-box {
+            background: #2c2f33;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 400px;
+            text-align: center;
+        }
+        
+        .login-box h2 {
+            color: #fff;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .login-box h2 i {
+            color: #7289da;
+        }
+        
+        .email-input {
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            background: #23272a;
+            border: 1px solid #40444b;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .email-input:focus {
+            outline: none;
+            border-color: #7289da;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #7289da, #5b6eae);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .email-list {
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        
+        .email-list h4 {
+            color: #8a8f98;
+            margin-bottom: 0.5rem;
+        }
+        
+        .email-option {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            background: #23272a;
+            border: 1px solid #40444b;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            color: #b9bbbe;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .email-option:hover {
+            background: #36393f;
+            border-color: #7289da;
+        }
+        
+        /* 加载界面 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 29, 33, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #40444b;
+            border-top-color: #7289da;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-text {
+            color: #fff;
+            font-size: 1.1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 连接状态 */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .connection-status.connected {
+            background: rgba(67, 181, 129, 0.1);
+            color: #43b581;
+            border: 1px solid rgba(67, 181, 129, 0.3);
+        }
+        
+        .connection-status.disconnected {
+            background: rgba(240, 71, 71, 0.1);
+            color: #f04747;
+            border: 1px solid rgba(240, 71, 71, 0.3);
+        }
+        
+        .email-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #7289da;
+            font-weight: 500;
+        }
+        
+        .refresh-btn {
+            background: rgba(114, 137, 218, 0.1);
+            border: 1px solid rgba(114, 137, 218, 0.3);
+            color: #7289da;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            background: rgba(114, 137, 218, 0.2);
+        }
+
+        /* 顶部导航栏 */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #23272a;
+            padding: 0.8rem 2rem;
+            border-bottom: 1px solid #40444b;
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #7289da;
+            background: linear-gradient(135deg, #7289da, #5b6eae);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .system-title {
+            font-size: 1rem;
+            color: #b9bbbe;
+            font-weight: 500;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background-color: #2c2f33;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .nav-tabs .tab {
+            background: transparent;
+            border: none;
+            color: #b9bbbe;
+            margin: 0 2px;
+            padding: 0.6rem 1.5rem;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            min-width: 120px;
+        }
+
+        .nav-tabs .tab.active {
+            background-color: #7289da;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(114, 137, 218, 0.3);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: #2c2f33;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            min-width: 300px;
+        }
+
+        .search-bar i {
+            color: #8a8f98;
+            margin-right: 0.5rem;
+        }
+
+        .search-bar input {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            width: 100%;
+            padding: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, #7289da, #5b6eae);
+            color: #ffffff;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(114, 137, 218, 0.4);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background-color: #2c2f33;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .user-menu:hover {
+            background-color: #36393f;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 左侧边栏 */
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #23272a 0%, #1a1d21 100%);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 0;
+            border-right: 1px solid #40444b;
+            position: relative;
+            z-index: 10;
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+            width: 100%;
+        }
+
+        .sidebar-nav li {
+            margin: 0.5rem 1rem;
+        }
+
+        .sidebar-nav a {
+            color: #8a8f98;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .sidebar-nav a i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-nav a.active,
+        .sidebar-nav a:hover {
+            background: linear-gradient(135deg, rgba(114, 137, 218, 0.1) 0%, rgba(114, 137, 218, 0.2) 100%);
+            color: #7289da;
+            border-left: 3px solid #7289da;
+        }
+
+        .system-status {
+            margin-top: auto;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-indicator.online i {
+            color: #43b581;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.offline i {
+            color: #f04747;
+        }
+
+        .last-update {
+            font-size: 0.8rem;
+            color: #8a8f98;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* 中间内容区 */
+        .middle-section {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+            background-color: #1a1d21;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .middle-section h2 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .middle-section h2 i {
+            color: #7289da;
+        }
+
+        /* 系统概览卡片 */
+        .overview-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .overview-card {
+            background: linear-gradient(135deg, #2c2f33 0%, #23272a 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #40444b;
+        }
+
+        .overview-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            border-color: #7289da;
+        }
+
+        .overview-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .overview-icon.running {
+            background: linear-gradient(135deg, rgba(67, 181, 129, 0.1) 0%, rgba(67, 181, 129, 0.2) 100%);
+            color: #43b581;
+        }
+
+        .overview-icon.active {
+            background: linear-gradient(135deg, rgba(114, 137, 218, 0.1) 0%, rgba(114, 137, 218, 0.2) 100%);
+            color: #7289da;
+        }
+
+        .overview-icon.idle {
+            background: linear-gradient(135deg, rgba(250, 166, 26, 0.1) 0%, rgba(250, 166, 26, 0.2) 100%);
+            color: #faa61a;
+        }
+
+        .overview-icon.warning {
+            background: linear-gradient(135deg, rgba(240, 71, 71, 0.1) 0%, rgba(240, 71, 71, 0.2) 100%);
+            color: #f04747;
+        }
+
+        .overview-content h3 {
+            font-size: 0.9rem;
+            color: #8a8f98;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .overview-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 0.2rem;
+        }
+
+        .overview-label {
+            font-size: 0.8rem;
+            color: #8a8f98;
+        }
+
+        /* 系统组件状态 */
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .component-card {
+            background: linear-gradient(135deg, #2c2f33 0%, #23272a 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #40444b;
+            transition: all 0.3s ease;
+        }
+
+        .component-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            border-color: #7289da;
+        }
+
+        .component-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .component-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            color: #ffffff;
+        }
+
+        .component-header h3 i {
+            color: #7289da;
+        }
+
+        .component-status {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .component-status.online {
+            background-color: rgba(67, 181, 129, 0.1);
+            color: #43b581;
+            border: 1px solid rgba(67, 181, 129, 0.3);
+        }
+
+        .component-status.warning {
+            background-color: rgba(250, 166, 26, 0.1);
+            color: #faa61a;
+            border: 1px solid rgba(250, 166, 26, 0.3);
+        }
+
+        .component-status.offline {
+            background-color: rgba(240, 71, 71, 0.1);
+            color: #f04747;
+            border: 1px solid rgba(240, 71, 71, 0.3);
+        }
+
+        .component-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: #8a8f98;
+        }
+
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background-color: #40444b;
+            border-radius: 3px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #43b581, #7289da);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #faa61a, #f04747);
+        }
+
+        .component-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #8a8f98;
+            padding-top: 1rem;
+            border-top: 1px solid #40444b;
+        }
+
+        /* 最近任务 */
+        .recent-tasks .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .view-all {
+            background: transparent;
+            border: none;
+            color: #7289da;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .view-all:hover {
+            background-color: rgba(114, 137, 218, 0.1);
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .task-card {
+            background: linear-gradient(135deg, #2c2f33 0%, #23272a 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #40444b;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            border-color: #7289da;
+        }
+
+        .task-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #7289da;
+            border-radius: 12px 0 0 12px;
+        }
+
+        .task-card.running::before { background: #43b581; }
+        .task-card.pending::before { background: #faa61a; }
+        .task-card.completed::before { background: #7289da; }
+        .task-card.failed::before { background: #f04747; }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .task-id {
+            font-weight: bold;
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        .status {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status.running { 
+            background-color: rgba(67, 181, 129, 0.1);
+            color: #43b581;
+            border: 1px solid rgba(67, 181, 129, 0.3);
+        }
+
+        .status.pending { 
+            background-color: rgba(250, 166, 26, 0.1);
+            color: #faa61a;
+            border: 1px solid rgba(250, 166, 26, 0.3);
+        }
+
+        .status.completed { 
+            background-color: rgba(114, 137, 218, 0.1);
+            color: #7289da;
+            border: 1px solid rgba(114, 137, 218, 0.3);
+        }
+
+        .status.failed { 
+            background-color: rgba(240, 71, 71, 0.1);
+            color: #f04747;
+            border: 1px solid rgba(240, 71, 71, 0.3);
+        }
+
+        .card-body {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .agv-img {
+            width: 120px;
+            height: 80px;
+            background: linear-gradient(135deg, #2c2f33, #36393f);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #7289da;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .task-info {
+            flex: 1;
+        }
+
+        .from-to {
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .progress {
+            font-size: 0.9rem;
+            color: #8a8f98;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #8a8f98;
+            padding-top: 1rem;
+            border-top: 1px solid #40444b;
+        }
+
+        .time, .duration {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .time::before {
+            content: '🕐';
+            font-size: 0.9rem;
+        }
+
+        /* 历史记录 */
+        .history-section .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .history-section .tab {
+            background: transparent;
+            border: 1px solid #40444b;
+            color: #8a8f98;
+            padding: 0.5rem 1.2rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .history-section .tab.active,
+        .history-section .tab:hover {
+            background-color: #7289da;
+            color: #ffffff;
+            border-color: #7289da;
+        }
+
+        .table-container {
+            background: linear-gradient(135deg, #2c2f33 0%, #23272a 100%);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #40444b;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: transparent;
+        }
+
+        .history-table th {
+            background-color: rgba(64, 68, 75, 0.5);
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .history-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #40444b;
+            color: #b9bbbe;
+            font-size: 0.9rem;
+        }
+
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .history-table tr:hover {
+            background-color: rgba(114, 137, 218, 0.05);
+        }
+
+        /* 右侧面板 */
+        .right-panel {
+            width: 350px;
+            background: linear-gradient(180deg, #23272a 0%, #1a1d21 100%);
+            padding: 1.5rem;
+            border-left: 1px solid #40444b;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            overflow-y: auto;
+        }
+
+        /* 详情面板 */
+        .agent-detail {
+            background: linear-gradient(135deg, #2c2f33 0%, #23272a 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #40444b;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .agent-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .agent-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #7289da, #5b6eae);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .agent-info h3 {
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+            font-size: 1.2rem;
+        }
+
+        .agent-id {
+            font-size: 0.85rem;
+            color: #8a8f98;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            background: #40444b;
+            color: #ffffff;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            background: #7289da;
+            transform: translateY(-2px);
+        }
+
+        .detail-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .agent-bg {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #2c2f33, #36393f);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7289da;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .agent-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+            background: rgba(114, 137, 218, 0.1);
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.8rem;
+            color: #8a8f98;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .stat-value.running {
+            color: #43b581;
+        }
+
+        .task-detail {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #7289da;
+        }
+
+        .task-detail h4 {
+            color: #ffffff;
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+        }
+
+        .task-detail p {
+            font-size: 0.9rem;
+            color: #b9bbbe;
+            margin-bottom: 0.3rem;
+            line-height: 1.4;
+        }
+
+        .detail-footer {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.8rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #7289da, #5b6eae);
+            color: #ffffff;
+        }
+
+        .btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(114, 137, 218, 0.4);
+        }
+
+        .btn.secondary {
+            background: transparent;
+            color: #7289da;
+            border: 1px solid #7289da;
+        }
+
+        .btn.secondary:hover {
+            background: rgba(114, 137, 218, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* 通知面板 */
+        .notifications-panel {
+            background: linear-gradient(135deg, #2c2f33 0%, #23272a 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #40444b;
+        }
+
+        .notifications-panel h3 {
+            color: #ffffff;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .notifications-panel h3 i {
+            color: #7289da;
+        }
+
+        .notifications-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .notification {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .notification:hover {
+            background: rgba(114, 137, 218, 0.1);
+            transform: translateX(5px);
+        }
+
+        .notification-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .notification-icon.info {
+            background: rgba(67, 181, 129, 0.1);
+            color: #43b581;
+        }
+
+        .notification-icon.warning {
+            background: rgba(250, 166, 26, 0.1);
+            color: #faa61a;
+        }
+
+        .notification-icon.success {
+            background: rgba(114, 137, 218, 0.1);
+            color: #7289da;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-content p {
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .notification-time {
+            font-size: 0.8rem;
+            color: #8a8f98;
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: #2c2f33;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-content h3 {
+            color: #fff;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #b9bbbe;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.8rem;
+            background: #23272a;
+            border: 1px solid #40444b;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #7289da;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .form-actions .btn {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录界面 -->
+    <div id="loginContainer" class="login-container">
+        <div class="login-box">
+            <h2><i class="fas fa-robot"></i> 格信智能AGV系统登录</h2>
+            <input type="email" id="emailInput" class="email-input" placeholder="请输入邮箱地址" value="demo@example.com" />
+            <button id="loginBtn" class="login-btn">登录系统</button>
+            
+            <div class="email-list">
+                <h4>预设账户：</h4>
+                <button class="email-option" onclick="useEmail('demo@example.com')">demo@example.com - 完整演示</button>
+                <button class="email-option" onclick="useEmail('admin@agv.com')">admin@agv.com - 管理员</button>
+                <button class="email-option" onclick="useEmail('operator@agv.com')">operator@agv.com - 操作员</button>
+                <button class="email-option" onclick="useEmail('test@test.com')">test@test.com - 测试</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加载界面 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">正在加载数据...</div>
+    </div>
+
+    <!-- 主界面 -->
+    <div class="dashboard-container">
+        <!-- 连接状态指示器 -->
+        <div id="connectionStatus" class="connection-status disconnected">
+            <i class="fas fa-circle"></i>
+            <span>连接中...</span>
+        </div>
+        
+        <!-- 顶部导航栏 -->
+        <header class="top-nav">
+            <div class="logo-section">
+                <div class="logo">OmniCore</div>
+                <div class="system-title">格信智能仓储机器人调度系统</div>
+            </div>
+            <div class="nav-tabs">
+                <button class="tab active" data-page="scheduler">Scheduler</button>
+                <button class="tab" data-page="monitor">Monitor</button>
+            </div>
+            <div class="nav-actions">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="搜索AGV、任务、仓库..." id="searchInput" />
+                </div>
+                <button class="add-btn" onclick="showAddTaskModal()">+ 新增任务</button>
+                <div class="user-menu">
+                    <span class="email-display" id="currentEmail"></span>
+                    <button class="refresh-btn" onclick="refreshAllData()" title="刷新数据">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 左侧边栏 -->
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li><a href="#" class="active" data-tab="dashboard"><i class="fas fa-home"></i><span>总览</span></a></li>
+                        <li><a href="reviewer.html" data-tab="agvs"><i class="fas fa-robot"></i><span>虚拟仿真</span></a></li>
+                        <li><a href="pathrebuild.html" data-tab="tasks"><i class="fas fa-box"></i><span>任务</span></a></li>
+                        <li><a href="ana.html" data-tab="analytics"><i class="fas fa-chart-line"></i><span>分析</span></a></li>
+                        <li><a href="#" data-tab="system"><i class="fas fa-server"></i><span>系统</span></a></li>
+                        <li><a href="#" data-tab="settings"><i class="fas fa-cog"></i><span>设置</span></a></li>
+                    </ul>
+                </nav>
+                <div class="system-status">
+                    <div class="status-indicator online" id="systemStatusIndicator">
+                        <i class="fas fa-circle"></i>
+                        <span>系统在线</span>
+                    </div>
+                    <div class="last-update" id="lastUpdateTime">更新: --:--</div>
+                </div>
+            </aside>
+
+            <!-- 中间内容区 -->
+            <section class="middle-section">
+                <!-- 系统概览卡片 -->
+                <div class="system-overview">
+                    <h2><i class="fas fa-tachometer-alt"></i> 系统概览</h2>
+                    <div class="overview-cards">
+                        <div class="overview-card">
+                            <div class="overview-icon running">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="overview-content">
+                                <h3>运行中</h3>
+                                <div class="overview-value" id="runningAGVs">0</div>
+                                <div class="overview-label">AGV机器人</div>
+                            </div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-icon active">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="overview-content">
+                                <h3>进行中</h3>
+                                <div class="overview-value" id="runningTasks">0</div>
+                                <div class="overview-label">任务</div>
+                            </div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-icon idle">
+                                <i class="fas fa-bed"></i>
+                            </div>
+                            <div class="overview-content">
+                                <h3>空闲中</h3>
+                                <div class="overview-value" id="idleAGVs">0</div>
+                                <div class="overview-label">AGV机器人</div>
+                            </div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-icon warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="overview-content">
+                                <h3>异常</h3>
+                                <div class="overview-value" id="warningAGVs">0</div>
+                                <div class="overview-label">AGV机器人</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模块化系统组件状态 -->
+                <div class="system-components">
+                    <h2><i class="fas fa-sitemap"></i> 系统组件状态</h2>
+                    <div class="components-grid" id="componentsGrid">
+                        <!-- 组件卡片将由JavaScript动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 最近任务 -->
+                <div class="recent-tasks">
+                    <div class="section-header">
+                        <h2><i class="fas fa-history"></i> 最近任务</h2>
+                        <button class="view-all" onclick="refreshTasks()">刷新任务 <i class="fas fa-sync-alt"></i></button>
+                    </div>
+                    <div class="card-container" id="tasksContainer">
+                        <!-- 任务卡片将由JavaScript动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 历史记录 -->
+                <div class="history-section">
+                    <h2><i class="fas fa-list-alt"></i> 历史记录</h2>
+                    <div class="tabs">
+                        <button class="tab active" onclick="filterHistory('all')">全部</button>
+                        <button class="tab" onclick="filterHistory('completed')">已完成</button>
+                        <button class="tab" onclick="filterHistory('failed')">失败</button>
+                        <button class="tab" onclick="filterHistory('system')">系统事件</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>事件</th>
+                                    <th>AGV</th>
+                                    <th>从/到</th>
+                                    <th>状态</th>
+                                    <th>时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- 历史记录将由JavaScript动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 右侧详情面板 -->
+            <aside class="right-panel">
+                <!-- AGV详情面板 -->
+                <div class="agent-detail" id="agvDetailPanel" style="display: none;">
+                    <!-- AGV详情将由JavaScript动态生成 -->
+                </div>
+
+                <!-- 系统通知面板 -->
+                <div class="notifications-panel">
+                    <h3><i class="fas fa-bell"></i> 系统通知</h3>
+                    <div class="notifications-list" id="notificationsList">
+                        <!-- 通知将由JavaScript动态生成 -->
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- 添加任务模态框 -->
+    <div id="addTaskModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3><i class="fas fa-plus-circle"></i> 添加新任务</h3>
+            <div class="form-group">
+                <label>AGV编号</label>
+                <select id="taskAgvId" class="form-input">
+                    <option value="">选择AGV</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>起点</label>
+                <input type="text" id="taskFrom" class="form-input" placeholder="例如: 仓库A" />
+            </div>
+            <div class="form-group">
+                <label>终点</label>
+                <input type="text" id="taskTo" class="form-input" placeholder="例如: 货架B3" />
+            </div>
+            <div class="form-group">
+                <label>任务类型</label>
+                <select id="taskType" class="form-input">
+                    <option value="取货">取货</option>
+                    <option value="送货">送货</option>
+                    <option value="入库">入库</option>
+                    <option value="出库">出库</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn secondary" onclick="closeAddTaskModal()">取消</button>
+                <button class="btn primary" onclick="submitNewTask()">创建任务</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 配置 ====================
+        const API_BASE = 'http://localhost:5000';
+        let currentEmail = '';
+        let allData = {};
+        let currentAgvDetail = null;
+        let refreshInterval = null;
+        
+        // ==================== 工具函数 ====================
+        
+        function showLoading(text = '正在加载数据...') {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+        function showError(message) {
+            alert('错误: ' + message);
+        }
+        
+        function formatTime(dateStr) {
+            if (!dateStr) return '--:--';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return '--:--';
+            }
+        }
+        
+        // ==================== HTTP请求函数 ====================
+        
+        async function sendRequest(action, data = {}) {
+            try {
+                const request = {
+                    action: action,
+                    email: currentEmail,
+                    ...data
+                };
+                
+                console.log('发送请求:', action);
+                
+                const response = await fetch(`${API_BASE}/proxy`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(request)
+                });
+                
+                console.log('收到响应状态:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
+                }
+                
+                // 先获取文本响应
+                const responseText = await response.text();
+                console.log('响应文本长度:', responseText.length, '字符');
+                
+                // 检查响应是否完整
+                const trimmedText = responseText.trim();
+                if (!trimmedText.endsWith('}')) {
+                    console.warn('响应不以}结束，尝试修复...');
+                    // 查找最后一个}
+                    const lastBrace = trimmedText.lastIndexOf('}');
+                    if (lastBrace !== -1) {
+                        const fixedText = trimmedText.substring(0, lastBrace + 1);
+                        console.log('修复后长度:', fixedText.length, '字符');
+                        return JSON.parse(fixedText);
+                    }
+                }
+                
+                // 尝试解析JSON
+                const result = JSON.parse(responseText);
+                console.log('解析成功，success:', result.success);
+                
+                if (!result.success) {
+                    throw new Error(result.error || '服务器返回错误');
+                }
+                
+                return result;
+                
+            } catch (error) {
+                console.error('请求失败:', error);
+                updateConnectionStatus(false);
+                throw error;
+            }
+        }
+        
+        // ==================== 连接管理 ====================
+        
+        function updateConnectionStatus(connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            
+            if (connected) {
+                statusElement.className = 'connection-status connected';
+                statusElement.innerHTML = '<i class="fas fa-circle"></i><span>已连接</span>';
+            } else {
+                statusElement.className = 'connection-status disconnected';
+                statusElement.innerHTML = '<i class="fas fa-circle"></i><span>连接断开</span>';
+            }
+        }
+        
+        async function testServerConnection() {
+            showLoading('正在连接服务器...');
+            try {
+                const testResponse = await sendRequest('GET_SYSTEM_STATUS');
+                if (testResponse.success) {
+                    console.log('服务器连接成功');
+                    updateConnectionStatus(true);
+                    hideLoading();
+                    return true;
+                } else {
+                    throw new Error(testResponse.error || '连接失败');
+                }
+            } catch (error) {
+                console.error('服务器连接失败:', error);
+                updateConnectionStatus(false);
+                hideLoading();
+                showError('连接服务器失败: ' + error.message);
+                return false;
+            }
+        }
+        
+        // ==================== 登录功能 ====================
+        
+        function useEmail(email) {
+            document.getElementById('emailInput').value = email;
+        }
+        
+        async function login() {
+            const email = document.getElementById('emailInput').value.trim();
+            
+            if (!email || !email.includes('@')) {
+                alert('请输入有效的邮箱地址');
+                return;
+            }
+            
+            currentEmail = email;
+            
+            // 保存当前邮箱到UI
+            document.getElementById('currentEmail').textContent = email;
+            
+            // 隐藏登录界面
+            document.getElementById('loginContainer').style.display = 'none';
+            
+            // 显示主界面
+            document.querySelector('.dashboard-container').style.display = 'flex';
+            
+            // 先测试连接
+            const connected = await testServerConnection();
+            if (connected) {
+                // 连接成功后加载数据
+                loadInitialData();
+                
+                // 启动自动刷新
+                startAutoRefresh();
+            } else {
+                // 连接失败，返回登录界面
+                logout();
+            }
+        }
+        
+        function logout() {
+            currentEmail = '';
+            clearInterval(refreshInterval);
+            
+            // 显示登录界面
+            document.getElementById('loginContainer').style.display = 'flex';
+            
+            // 隐藏主界面
+            document.querySelector('.dashboard-container').style.display = 'none';
+            
+            // 重置数据
+            allData = {};
+            currentAgvDetail = null;
+        }
+        
+        // ==================== 数据处理 ====================
+        
+        function loadInitialData() {
+            showLoading('正在加载系统数据...');
+            
+            sendRequest('GET_USER_DATA')
+                .then(response => {
+                    if (response.success && response.data) {
+                        allData = response.data;
+                        updateUIWithData(allData);
+                    } else {
+                        showError('数据加载失败');
+                    }
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('加载数据失败:', error);
+                    hideLoading();
+                    showError('加载数据失败: ' + error.message);
+                });
+        }
+        
+        function refreshAllData() {
+            if (!currentEmail) return;
+            
+            showLoading('正在刷新数据...');
+            
+            sendRequest('GET_USER_DATA')
+                .then(response => {
+                    if (response.success && response.data) {
+                        allData = response.data;
+                        updateUIWithData(allData);
+                    }
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('刷新数据失败:', error);
+                    hideLoading();
+                });
+        }
+        
+        function refreshTasks() {
+            sendRequest('GET_TASKS')
+                .then(response => {
+                    if (response.success && response.data) {
+                        allData.tasks = response.data;
+                        updateTasksList(response.data);
+                    }
+                })
+                .catch(error => {
+                    console.error('刷新任务失败:', error);
+                });
+        }
+        
+        // ==================== UI更新函数 ====================
+        
+        function updateUIWithData(data) {
+            console.log('更新UI，数据:', data);
+            
+            if (!data) {
+                console.error('没有数据可更新');
+                return;
+            }
+            
+            // 1. 更新系统概览
+            if (data.system) {
+                document.getElementById('runningAGVs').textContent = data.system.running_agvs || 0;
+                document.getElementById('idleAGVs').textContent = data.system.idle_agvs || 0;
+                document.getElementById('warningAGVs').textContent = data.system.warning_agvs || 0;
+                
+                // 计算运行中的任务
+                const runningTasks = (data.tasks || []).filter(task => 
+                    task.status === 'running' || task.status === 'pending'
+                ).length;
+                document.getElementById('runningTasks').textContent = runningTasks;
+            }
+            
+            // 2. 更新系统组件
+            if (data.system?.components) {
+                updateSystemComponents(data.system.components);
+            }
+            
+            // 3. 更新任务列表
+            if (data.tasks) {
+                updateTasksList(data.tasks);
+            }
+            
+            // 4. 更新历史记录
+            if (data.history) {
+                updateHistoryList(data.history);
+            }
+            
+            // 5. 更新通知
+            if (data.notifications) {
+                updateNotifications(data.notifications);
+            }
+            
+            // 6. 更新最后更新时间
+            if (data.updated_at) {
+                updateLastUpdateTime(data.updated_at);
+            }
+            
+            // 7. 更新AGV选择框
+            if (data.agvs) {
+                updateAgvSelect(data.agvs);
+            }
+            
+            console.log('UI更新完成');
+        }
+        
+        function updateSystemComponents(components) {
+            const grid = document.getElementById('componentsGrid');
+            grid.innerHTML = '';
+            
+            components.forEach(component => {
+                const card = document.createElement('div');
+                card.className = 'component-card';
+                
+                const statusClass = component.status === 'online' ? 'online' : 
+                                   component.status === 'warning' ? 'warning' : 'offline';
+                
+                const progressWidth = component.cpu || component.storage || 0;
+                const progressClass = component.status === 'warning' ? 'warning' : '';
+                
+                card.innerHTML = `
+                    <div class="component-header">
+                        <h3><i class="fas ${getComponentIcon(component.name)}"></i> ${component.name}</h3>
+                        <span class="component-status ${statusClass}">${component.status === 'online' ? '在线' : 
+                           component.status === 'warning' ? '警告' : '离线'}</span>
+                    </div>
+                    <div class="component-body">
+                        <div class="component-metrics">
+                            ${getComponentMetrics(component)}
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${progressClass}" style="width: ${progressWidth}%"></div>
+                        </div>
+                        <div class="component-footer">
+                            ${getComponentFooter(component)}
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        function getComponentIcon(name) {
+            const icons = {
+                '调度中心': 'fa-brain',
+                '通信网关': 'fa-network-wired',
+                '数据存储': 'fa-database',
+                '地图服务': 'fa-map-marked-alt'
+            };
+            return icons[name] || 'fa-server';
+        }
+        
+        function getComponentMetrics(component) {
+            let metrics = '';
+            
+            if (component.queue !== undefined) {
+                metrics += `
+                    <div class="metric">
+                        <span class="metric-label">任务队列</span>
+                        <span class="metric-value">${component.queue}</span>
+                    </div>
+                `;
+            }
+            
+            if (component.connections !== undefined) {
+                metrics += `
+                    <div class="metric">
+                        <span class="metric-label">连接数</span>
+                        <span class="metric-value">${component.connections}</span>
+                    </div>
+                `;
+            }
+            
+            if (component.storage !== undefined) {
+                metrics += `
+                    <div class="metric">
+                        <span class="metric-label">存储使用</span>
+                        <span class="metric-value">${component.storage}%</span>
+                    </div>
+                `;
+            }
+            
+            if (component.last_update !== undefined) {
+                metrics += `
+                    <div class="metric">
+                        <span class="metric-label">地图更新</span>
+                        <span class="metric-value">${component.last_update}</span>
+                    </div>
+                `;
+            }
+            
+            if (component.response_time !== undefined) {
+                metrics += `
+                    <div class="metric">
+                        <span class="metric-label">响应时间</span>
+                        <span class="metric-value">${component.response_time}</span>
+                    </div>
+                `;
+            }
+            
+            return metrics;
+        }
+        
+        function getComponentFooter(component) {
+            let footer = '';
+            
+            if (component.cpu !== undefined) {
+                footer += `<span>CPU: ${component.cpu}%</span>`;
+            }
+            
+            if (component.memory !== undefined) {
+                footer += `<span>内存: ${component.memory}%</span>`;
+            }
+            
+            if (component.bandwidth !== undefined) {
+                footer += `<span>带宽: ${component.bandwidth}%</span>`;
+            }
+            
+            if (component.queries !== undefined) {
+                footer += `<span>查询/秒: ${component.queries}</span>`;
+            }
+            
+            if (component.version !== undefined) {
+                footer += `<span>版本: ${component.version}</span>`;
+            }
+            
+            return footer;
+        }
+        
+        function updateTasksList(tasks) {
+            const container = document.getElementById('tasksContainer');
+            container.innerHTML = '';
+            
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #8a8f98;">暂无任务</div>';
+                return;
+            }
+            
+            // 只显示最近的任务
+            const recentTasks = tasks.slice(0, 3);
+            
+            recentTasks.forEach(task => {
+                const card = createTaskCard(task);
+                container.appendChild(card);
+            });
+        }
+        
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            
+            const statusClass = task.status || 'pending';
+            const statusText = {
+                'running': '运行中',
+                'pending': '等待中',
+                'completed': '已完成',
+                'warning': '警告',
+                'failed': '失败'
+            }[task.status] || task.status || '等待中';
+            
+            const progress = task.progress || 0;
+            const agv = (allData.agvs || []).find(a => a.id === task.agv_id);
+            const agvName = agv ? agv.name || agv.id : task.agv_id;
+            const agvShort = agvName.substring(0, 3);
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="task-id">${task.id || 'Task-#'}</span>
+                    <span class="status ${statusClass}">${statusText}</span>
+                </div>
+                <div class="card-body">
+                    <div class="agv-img">${agvShort}</div>
+                    <div class="task-info">
+                        <p class="from-to">从: ${task.from || '--'} → 到: ${task.to || '--'}</p>
+                        <p class="progress">进度: ${progress}%</p>
+                        <p class="agv-name">AGV: ${agvName}</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span class="time">${task.start_time || '--:--'}</span>
+                    <span class="duration">${task.eta ? '预计完成: ' + task.eta : 
+                                           task.duration ? '耗时: ' + task.duration : '--'}</span>
+                </div>
+            `;
+            
+            // 点击任务卡片查看AGV详情
+            card.addEventListener('click', () => {
+                if (agv) {
+                    showAgvDetail(agv);
+                }
+            });
+            
+            return card;
+        }
+        
+        function updateHistoryList(history) {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+            
+            if (!history || history.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" style="text-align: center; padding: 2rem; color: #8a8f98;">暂无历史记录</td>';
+                tbody.appendChild(row);
+                return;
+            }
+            
+            // 只显示最近的10条记录
+            const recentHistory = history.slice(0, 10);
+            
+            recentHistory.forEach(record => {
+                const row = createHistoryRow(record);
+                tbody.appendChild(row);
+            });
+        }
+        
+        function createHistoryRow(record) {
+            const row = document.createElement('tr');
+            
+            const statusClass = record.status || 'info';
+            const statusText = {
+                'completed': '已完成',
+                'running': '运行中',
+                'failed': '失败',
+                'warning': '警告',
+                'info': '信息',
+                'pending': '等待中'
+            }[record.status] || record.status || '信息';
+            
+            row.innerHTML = `
+                <td>${record.event || '--'}</td>
+                <td>${record.agv_id || '--'}</td>
+                <td>${record.from_to || '--'}</td>
+                <td><span class="status ${statusClass}">${statusText}</span></td>
+                <td>${record.time || '--:--'}</td>
+            `;
+            
+            return row;
+        }
+        
+        function filterHistory(filter) {
+            console.log('筛选历史记录:', filter);
+        }
+        
+        function updateNotifications(notifications) {
+            const container = document.getElementById('notificationsList');
+            container.innerHTML = '';
+            
+            if (!notifications || notifications.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 1rem; color: #8a8f98;">暂无通知</div>';
+                return;
+            }
+            
+            // 只显示最近的5条通知
+            const recentNotifications = notifications.slice(0, 5);
+            
+            recentNotifications.forEach(notif => {
+                const notification = createNotificationElement(notif);
+                container.appendChild(notification);
+            });
+        }
+        
+        function createNotificationElement(notif) {
+            const div = document.createElement('div');
+            div.className = 'notification';
+            
+            const iconClass = notif.type || 'info';
+            const icon = {
+                'info': 'fa-info-circle',
+                'warning': 'fa-exclamation-triangle',
+                'success': 'fa-check-circle',
+                'error': 'fa-exclamation-circle'
+            }[notif.type] || 'fa-info-circle';
+            
+            div.innerHTML = `
+                <div class="notification-icon ${iconClass}">
+                    <i class="fas ${icon}"></i>
+                </div>
+                <div class="notification-content">
+                    <p>${notif.message || '--'}</p>
+                    <span class="notification-time">${notif.time || '--'}</span>
+                </div>
+            `;
+            
+            return div;
+        }
+        
+        function updateAgvSelect(agvs) {
+            const select = document.getElementById('taskAgvId');
+            select.innerHTML = '<option value="">选择AGV</option>';
+            
+            if (!agvs || agvs.length === 0) {
+                return;
+            }
+            
+            agvs.forEach(agv => {
+                if (agv.status !== 'warning') { // 不显示异常的AGV
+                    const option = document.createElement('option');
+                    option.value = agv.id;
+                    option.textContent = `${agv.id} - ${agv.model || ''} (电量: ${agv.battery || 0}%)`;
+                    select.appendChild(option);
+                }
+            });
+        }
+        
+        function updateLastUpdateTime(timeStr) {
+            const element = document.getElementById('lastUpdateTime');
+            if (timeStr && element) {
+                const time = formatTime(timeStr);
+                element.textContent = `更新: ${time}`;
+            }
+        }
+        
+        // ==================== AGV详情功能 ====================
+        
+        function showAgvDetail(agv) {
+            currentAgvDetail = agv;
+            updateAgvDetail(agv, allData.tasks || []);
+            
+            const panel = document.getElementById('agvDetailPanel');
+            panel.style.display = 'block';
+        }
+        
+        function updateAgvDetail(agv, tasks) {
+            const panel = document.getElementById('agvDetailPanel');
+            
+            const currentTask = tasks.find(task => 
+                task.agv_id === agv.id && 
+                (task.status === 'running' || task.status === 'pending')
+            );
+            
+            const statusClass = agv.status || 'idle';
+            const statusText = {
+                'running': '运行中',
+                'pending': '等待中',
+                'completed': '已完成',
+                'warning': '警告',
+                'idle': '空闲中'
+            }[agv.status] || agv.status || '空闲中';
+            
+            const agvShort = agv.id ? agv.id.substring(0, 3) : 'AGV';
+            
+            panel.innerHTML = `
+                <div class="detail-header">
+                    <div class="agent-info">
+                        <div class="agent-avatar">${agvShort}</div>
+                        <div>
+                            <h3>${agv.id || '--'}</h3>
+                            <p class="agent-id">${agv.name || ''} | 型号: ${agv.model || '未知'}</p>
+                        </div>
+                    </div>
+                    <div class="detail-actions">
+                        <button class="action-btn" onclick="toggleAgvNotification('${agv.id}')">
+                            <i class="fas fa-bell"></i>
+                        </button>
+                        <button class="action-btn" onclick="showAgvSettings('${agv.id}')">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="detail-body">
+                    <div class="agent-bg">${agv.id || 'AGV'}</div>
+                    <div class="agent-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">状态</span>
+                            <span class="stat-value ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">电量</span>
+                            <span class="stat-value">${agv.battery || 0}%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">速度</span>
+                            <span class="stat-value">${agv.speed || 0} m/s</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">完成数</span>
+                            <span class="stat-value">${agv.tasks_completed || 0}</span>
+                        </div>
+                    </div>
+                    ${currentTask ? `
+                    <div class="task-detail">
+                        <h4>当前任务</h4>
+                        <p>从: ${currentTask.from} → 到: ${currentTask.to}</p>
+                        <p>进度: ${currentTask.progress || 0}% | 
+                           ${currentTask.eta ? '预计完成: ' + currentTask.eta : ''}</p>
+                    </div>
+                    ` : ''}
+                </div>
+                <div class="detail-footer">
+                    <button class="btn primary" onclick="showAgvLogs('${agv.id}')">查看日志</button>
+                    <button class="btn secondary" onclick="reassignTask('${agv.id}')">重新分配</button>
+                </div>
+            `;
+        }
+        
+        // ==================== 任务管理 ====================
+        
+        function showAddTaskModal() {
+            document.getElementById('addTaskModal').style.display = 'flex';
+        }
+        
+        function closeAddTaskModal() {
+            document.getElementById('addTaskModal').style.display = 'none';
+        }
+        
+        async function submitNewTask() {
+            const agvId = document.getElementById('taskAgvId').value;
+            const from = document.getElementById('taskFrom').value.trim();
+            const to = document.getElementById('taskTo').value.trim();
+            const type = document.getElementById('taskType').value;
+            
+            if (!agvId) {
+                alert('请选择AGV');
+                return;
+            }
+            
+            if (!from || !to) {
+                alert('请输入起点和终点');
+                return;
+            }
+            
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                           now.getMinutes().toString().padStart(2, '0');
+            
+            const taskData = {
+                agv_id: agvId,
+                from: from,
+                to: to,
+                status: 'pending',
+                progress: 0,
+                type: type,
+                start_time: timeStr,
+                eta: '10min',
+                weight: 100,
+                distance: 150
+            };
+            
+            try {
+                await sendRequest('ADD_TASK', { task_data: taskData });
+                alert('任务创建成功！');
+                closeAddTaskModal();
+                refreshAllData();
+            } catch (error) {
+                console.error('添加任务失败:', error);
+                alert('添加任务失败: ' + error.message);
+            }
+        }
+        
+        // ==================== 其他功能 ====================
+        
+        function toggleAgvNotification(agvId) {
+            console.log('切换通知:', agvId);
+        }
+        
+        function showAgvSettings(agvId) {
+            console.log('显示设置:', agvId);
+        }
+        
+        function showAgvLogs(agvId) {
+            alert(`查看 ${agvId} 的日志`);
+        }
+        
+        function reassignTask(agvId) {
+            alert(`重新分配 ${agvId} 的任务`);
+        }
+        
+        // ==================== 自动刷新 ====================
+        
+        function startAutoRefresh() {
+            // 每30秒刷新一次系统状态
+            refreshInterval = setInterval(() => {
+                if (currentEmail) {
+                    sendRequest('GET_SYSTEM_STATUS')
+                        .then(response => {
+                            if (response.success && response.data) {
+                                allData.system = response.data;
+                                updateUIWithData(allData);
+                            }
+                        })
+                        .catch(error => console.error('自动刷新失败:', error));
+                }
+            }, 30000);
+        }
+        
+        // ==================== 事件监听器 ====================
+        
+        document.getElementById('loginBtn').addEventListener('click', login);
+        
+        document.getElementById('emailInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 自动使用演示邮箱
+            useEmail('demo@example.com');
+        });
+    </script>
+</body>
+</html>

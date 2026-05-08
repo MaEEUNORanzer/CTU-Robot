@@ -1,0 +1,80 @@
+{
+  "simulationInfo": {
+    "timestamp": "2026-04-08T09:22:59.999Z",
+    "sceneName": "默认场景",
+    "isRunning": true,
+    "runTime": 19.351
+  },
+  "summary": {
+    "totalPaths": 2,
+    "completedPaths": 1,
+    "activePaths": 1,
+    "totalDistance": "3.1 km",
+    "averageSpeed": "1.1 m/s",
+    "averageCompletionTime": "0 s"
+  },
+  "agvStats": {
+    "totalCount": 4,
+    "movingCount": 1,
+    "averageBattery": "75.6%",
+    "lowBatteryCount": 0
+  },
+  "paths": [
+    {
+      "id": "path-2",
+      "name": "包装区到装载区",
+      "agvName": "迅捷二号",
+      "waypoints": 6,
+      "status": "completed",
+      "startTime": null,
+      "endTime": null
+    },
+    {
+      "id": "path-1775639977187",
+      "name": "新建路径",
+      "agvName": "精拣号",
+      "waypoints": 7,
+      "status": "active",
+      "startTime": "2026-04-08T09:22:40.642Z",
+      "endTime": null
+    }
+  ],
+  "agvs": [
+    {
+      "id": "agv-1",
+      "name": "AGV-01",
+      "model": "X1-2000",
+      "speed": 1.2,
+      "battery": "85%",
+      "status": "idle",
+      "currentPath": "none"
+    },
+    {
+      "id": "agv-1775640072239",
+      "name": "AGV机器人2",
+      "model": "S1-1000",
+      "speed": 1.2115454405978032,
+      "battery": "97%",
+      "status": "idle",
+      "currentPath": "none"
+    },
+    {
+      "id": "AGV-01",
+      "name": "精拣号",
+      "model": "X1-2000",
+      "speed": 1.2,
+      "battery": "75.32405000000192%",
+      "status": "moving",
+      "currentPath": "path-1775639977187"
+    },
+    {
+      "id": "AGV-03",
+      "name": "大力三号",
+      "model": "X2-3000",
+      "speed": 0.8,
+      "battery": "45%",
+      "status": "idle",
+      "currentPath": "none"
+    }
+  ]
+}

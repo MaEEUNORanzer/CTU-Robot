@@ -1,0 +1,144 @@
+<div class="page-header">
+    <h1 class="page-title">任务管理</h1>
+    <p class="page-subtitle">创建、分配和监控AGV任务</p>
+</div>
+
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">创建新任务</h2>
+    </div>
+    
+    <div class="form-container">
+        <div class="form-group">
+            <label class="form-label">任务类型</label>
+            <select class="form-control">
+                <option value="material">物料搬运</option>
+                <option value="shelf">货架运输</option>
+                <option value="empty">空箱回收</option>
+                <option value="product">成品出库</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">起始位置</label>
+            <input type="text" class="form-control" placeholder="例如: A-12">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">目标位置</label>
+            <input type="text" class="form-control" placeholder="例如: C-08">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">优先级</label>
+            <select class="form-control">
+                <option value="low">低</option>
+                <option value="normal" selected>普通</option>
+                <option value="high">高</option>
+                <option value="urgent">紧急</option>
+            </select>
+        </div>
+        
+        <button class="btn btn-primary" onclick="createTask()">
+            <i class="fas fa-plus"></i> 创建任务
+        </button>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">任务队列</h2>
+        <button class="btn btn-secondary" onclick="refreshTasks()">
+            <i class="fas fa-sync-alt"></i> 刷新
+        </button>
+    </div>
+    
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>任务ID</th>
+                    <th>类型</th>
+                    <th>起始位置</th>
+                    <th>目标位置</th>
+                    <th>分配AGV</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="taskList">
+                <!-- 任务数据将通过JavaScript动态加载 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// 任务管理页面初始化
+function initTaskManagementPage() {
+    loadTaskList();
+}
+
+// 加载任务列表
+function loadTaskList() {
+    // 模拟任务数据
+    const tasks = [
+        { id: 'TASK-2023-001', type: '物料搬运', from: 'A-12', to: 'C-08', agv: 'AGV-01', status: '进行中', created: '2023-10-26 08:30' },
+        { id: 'TASK-2023-002', type: '货架运输', from: 'B-07', to: 'D-15', agv: 'AGV-02', status: '已完成', created: '2023-10-26 09:20' },
+        { id: 'TASK-2023-003', type: '空箱回收', from: 'E-22', to: 'F-05', agv: '未分配', status: '等待中', created: '2023-10-26 10:15' },
+        { id: 'TASK-2023-004', type: '成品出库', from: 'G-18', to: 'H-03', agv: 'AGV-05', status: '进行中', created: '2023-10-26 11:30' },
+        { id: 'TASK-2023-005', type: '原料入库', from: 'I-09', to: 'J-14', agv: '未分配', status: '等待中', created: '2023-10-26 13:45' }
+    ];
+    
+    const tableBody = document.getElementById('taskList');
+    let tasksHtml = '';
+    
+    tasks.forEach(task => {
+        let statusColor = '#666';
+        if (task.status === '进行中') statusColor = '#ff9800';
+        if (task.status === '已完成') statusColor = '#4caf50';
+        if (task.status === '失败') statusColor = '#f44336';
+        
+        tasksHtml += `
+        <tr>
+            <td>${task.id}</td>
+            <td>${task.type}</td>
+            <td>${task.from}</td>
+            <td>${task.to}</td>
+            <td>${task.agv}</td>
+            <td><span style="color: ${statusColor}; font-weight: 600;">${task.status}</span></td>
+            <td>${task.created}</td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="viewTask('${task.id}')">查看</button>
+                ${task.status === '等待中' ? `<button class="btn btn-success btn-sm" onclick="assignTask('${task.id}')">分配</button>` : ''}
+            </td>
+        </tr>
+        `;
+    });
+    
+    tableBody.innerHTML = tasksHtml;
+}
+
+// 创建任务
+function createTask() {
+    showNotification('任务创建成功', 'success');
+    loadTaskList();
+}
+
+// 刷新任务列表
+function refreshTasks() {
+    loadTaskList();
+    showNotification('任务列表已刷新', 'info');
+}
+
+// 查看任务详情
+function viewTask(taskId) {
+    alert(`查看任务 ${taskId} 的详细信息\n功能待完善...`);
+}
+
+// 分配任务
+function assignTask(taskId) {
+    alert(`为任务 ${taskId} 分配AGV\n功能待完善...`);
+}
+</script>

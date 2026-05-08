@@ -1,0 +1,2744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AGV系统状态分析</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #1a1d21;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧控制面板 */
+        .control-panel {
+            width: 280px;
+            background: linear-gradient(180deg, #23272a 0%, #1a1d21 100%);
+            padding: 1.5rem;
+            border-right: 1px solid #40444b;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* 右侧主内容区 */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #2c2f33;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        /* 顶部标题栏 */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background-color: #23272a;
+            border-bottom: 1px solid #40444b;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #7289da;
+            background: linear-gradient(135deg, #7289da, #5b6eae);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title {
+            font-size: 1.2rem;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7289da, #5b6eae);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(114, 137, 218, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #7289da;
+            border: 1px solid #7289da;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(114, 137, 218, 0.1);
+        }
+
+        .btn-success {
+            background: #43b581;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #3ca374;
+        }
+
+        .btn-warning {
+            background: #faa61a;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e69516;
+        }
+
+        .btn-danger {
+            background: #f04747;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d63e3e;
+        }
+
+        /* 控制面板内容 */
+        .control-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-section h3 {
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-section h3 i {
+            color: #7289da;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            color: #8a8f98;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: #2c2f33;
+            border: 1px solid #40444b;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.9rem;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #7289da;
+        }
+
+        /* 时间选择器 */
+        .time-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .time-option {
+            background: #2c2f33;
+            border: 1px solid #40444b;
+            border-radius: 6px;
+            padding: 0.6rem 0.3rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .time-option:hover {
+            background: #36393f;
+            border-color: #7289da;
+        }
+
+        .time-option.active {
+            background: rgba(114, 137, 218, 0.2);
+            border-color: #7289da;
+            color: #7289da;
+        }
+
+        .time-label {
+            font-size: 0.8rem;
+            color: #8a8f98;
+        }
+
+        /* 指标卡片 */
+        .metric-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+        }
+
+        .metric-card {
+            background: #2c2f33;
+            border: 1px solid #40444b;
+            border-radius: 8px;
+            padding: 0.8rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            border-color: #7289da;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #8a8f98;
+        }
+
+        /* 警报列表 */
+        .alert-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            background: rgba(240, 71, 71, 0.1);
+            border: 1px solid rgba(240, 71, 71, 0.3);
+            border-radius: 6px;
+            padding: 0.6rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .alert-item.warning {
+            background: rgba(250, 166, 26, 0.1);
+            border-color: rgba(250, 166, 26, 0.3);
+        }
+
+        .alert-item.info {
+            background: rgba(114, 137, 218, 0.1);
+            border-color: rgba(114, 137, 218, 0.3);
+        }
+
+        .alert-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .alert-icon.error {
+            background: rgba(240, 71, 71, 0.2);
+            color: #f04747;
+        }
+
+        .alert-icon.warning {
+            background: rgba(250, 166, 26, 0.2);
+            color: #faa61a;
+        }
+
+        .alert-icon.info {
+            background: rgba(114, 137, 218, 0.2);
+            color: #7289da;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .alert-time {
+            color: #8a8f98;
+            font-size: 0.7rem;
+        }
+
+        /* 主内容区域 */
+        .dashboard-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        /* 仪表盘网格 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: auto;
+            gap: 1.5rem;
+        }
+
+        /* 仪表盘部件 */
+        .dashboard-widget {
+            background: #23272a;
+            border: 1px solid #40444b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .widget-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .widget-title {
+            font-size: 1.1rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .widget-title i {
+            color: #7289da;
+        }
+
+        .widget-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .widget-action-btn {
+            background: none;
+            border: none;
+            color: #8a8f98;
+            cursor: pointer;
+            padding: 0.2rem;
+        }
+
+        .widget-action-btn:hover {
+            color: #7289da;
+        }
+
+        /* 尺寸定义 */
+        .widget-small { grid-column: span 3; }
+        .widget-medium { grid-column: span 4; }
+        .widget-large { grid-column: span 6; }
+        .widget-xlarge { grid-column: span 8; }
+        .widget-full { grid-column: span 12; }
+
+        /* 健康度指示器 */
+        .health-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .health-gauge {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .health-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .health-score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .health-label {
+            font-size: 0.8rem;
+            color: #8a8f98;
+        }
+
+        .health-details {
+            flex: 1;
+        }
+
+        .health-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #40444b;
+        }
+
+        .health-item:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+
+        .health-item-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #ffffff;
+            font-size: 0.9rem;
+        }
+
+        .health-item-value {
+            font-weight: bold;
+        }
+
+        /* 状态卡片 */
+        .status-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .status-card {
+            background: #2c2f33;
+            border: 1px solid #40444b;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .status-card:hover {
+            transform: translateY(-2px);
+            border-color: #7289da;
+        }
+
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.8rem;
+            font-size: 1.2rem;
+        }
+
+        .status-icon.success { background: rgba(67, 181, 129, 0.2); color: #43b581; }
+        .status-icon.warning { background: rgba(250, 166, 26, 0.2); color: #faa61a; }
+        .status-icon.error { background: rgba(240, 71, 71, 0.2); color: #f04747; }
+        .status-icon.info { background: rgba(114, 137, 218, 0.2); color: #7289da; }
+
+        .status-count {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+        }
+
+        .status-label {
+            font-size: 0.9rem;
+            color: #8a8f98;
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* 性能指标 */
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .performance-item {
+            background: #2c2f33;
+            border: 1px solid #40444b;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .performance-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+        }
+
+        .performance-label {
+            color: #8a8f98;
+            font-size: 0.9rem;
+        }
+
+        .performance-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .performance-change {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+        }
+
+        .performance-change.positive {
+            background: rgba(67, 181, 129, 0.2);
+            color: #43b581;
+        }
+
+        .performance-change.negative {
+            background: rgba(240, 71, 71, 0.2);
+            color: #f04747;
+        }
+
+        .performance-trend {
+            height: 40px;
+            margin-top: 0.5rem;
+        }
+
+        /* 热力图 */
+        .heatmap-container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+        }
+
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .heatmap-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+            color: #8a8f98;
+        }
+
+        .heatmap-legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* 表格 */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .analysis-table th {
+            background: #2c2f33;
+            color: #ffffff;
+            font-weight: 600;
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid #40444b;
+        }
+
+        .analysis-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #40444b;
+            color: #b9bbbe;
+        }
+
+        .analysis-table tr:hover {
+            background: rgba(114, 137, 218, 0.05);
+        }
+
+        .status-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-badge.online { background: rgba(67, 181, 129, 0.2); color: #43b581; }
+        .status-badge.warning { background: rgba(250, 166, 26, 0.2); color: #faa61a; }
+        .status-badge.offline { background: rgba(240, 71, 71, 0.2); color: #f04747; }
+        .status-badge.idle { background: rgba(114, 137, 218, 0.2); color: #7289da; }
+
+        /* 排行榜 */
+        .leaderboard {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem;
+            background: #2c2f33;
+            border: 1px solid #40444b;
+            border-radius: 6px;
+        }
+
+        .leaderboard-rank {
+            width: 24px;
+            height: 24px;
+            background: #7289da;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .leaderboard-info {
+            flex: 1;
+            margin-left: 1rem;
+        }
+
+        .leaderboard-name {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .leaderboard-details {
+            color: #8a8f98;
+            font-size: 0.8rem;
+        }
+
+        .leaderboard-value {
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        /* 趋势指示器 */
+        .trend-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .trend-up { color: #43b581; }
+        .trend-down { color: #f04747; }
+        .trend-flat { color: #8a8f98; }
+
+        /* 底部状态栏 */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 1.5rem;
+            background-color: #23272a;
+            border-top: 1px solid #40444b;
+        }
+
+        .status-items {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-label {
+            color: #8a8f98;
+            font-size: 0.9rem;
+        }
+
+        .status-value {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 29, 33, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #40444b;
+            border-top-color: #7289da;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        .loading-text {
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #8a8f98;
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 1400px) {
+            .widget-small { grid-column: span 6; }
+            .widget-medium { grid-column: span 6; }
+            .widget-large { grid-column: span 12; }
+            .widget-xlarge { grid-column: span 12; }
+        }
+
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .control-panel { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #40444b; }
+            .content-area { height: calc(100vh - 300px); }
+            .widget-small, .widget-medium, .widget-large, .widget-xlarge { grid-column: span 12; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧控制面板 -->
+        <div class="control-panel">
+            <!-- 时间范围选择 -->
+            <div class="control-section">
+                <h3><i class="fas fa-calendar-alt"></i> 时间范围</h3>
+                <div class="time-selector">
+                    <div class="time-option active" onclick="changeTimeRange('today')">
+                        <div style="font-size: 1.2rem; font-weight: bold;">今日</div>
+                        <div class="time-label">实时</div>
+                    </div>
+                    <div class="time-option" onclick="changeTimeRange('week')">
+                        <div style="font-size: 1.2rem; font-weight: bold;">本周</div>
+                        <div class="time-label">趋势</div>
+                    </div>
+                    <div class="time-option" onclick="changeTimeRange('month')">
+                        <div style="font-size: 1.2rem; font-weight: bold;">本月</div>
+                        <div class="time-label">统计</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 关键指标 -->
+            <div class="control-section">
+                <h3><i class="fas fa-chart-line"></i> 关键指标</h3>
+                <div class="metric-cards">
+                    <div class="metric-card">
+                        <div class="metric-value" id="totalTasks">0</div>
+                        <div class="metric-label">总任务数</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="successRate">0%</div>
+                        <div class="metric-label">成功率</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="avgResponse">0ms</div>
+                        <div class="metric-label">平均响应</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="agvUtilization">0%</div>
+                        <div class="metric-label">AGV利用率</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统警报 -->
+            <div class="control-section">
+                <h3><i class="fas fa-exclamation-triangle"></i> 系统警报</h3>
+                <div class="alert-list" id="alertList">
+                    <!-- 警报列表由JavaScript生成 -->
+                </div>
+            </div>
+
+            <!-- 数据源选择 -->
+            <div class="control-section">
+                <h3><i class="fas fa-database"></i> 数据源</h3>
+                <div class="form-group">
+                    <select class="form-select" id="dataSource" onchange="changeDataSource()">
+                        <option value="realtime">实时数据</option>
+                        <option value="historical">历史数据</option>
+                        <option value="simulation">模拟数据</option>
+                        <option value="imported">导入数据</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 刷新控制 -->
+            <div class="control-section">
+                <h3><i class="fas fa-sync-alt"></i> 刷新控制</h3>
+                <div class="form-group">
+                    <label class="form-label">自动刷新间隔</label>
+                    <select class="form-select" id="refreshInterval" onchange="changeRefreshInterval()">
+                        <option value="0">手动刷新</option>
+                        <option value="5">5秒</option>
+                        <option value="10" selected>10秒</option>
+                        <option value="30">30秒</option>
+                        <option value="60">1分钟</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 导出控制 -->
+            <div class="control-section" style="margin-top: auto;">
+                <button class="btn btn-primary" onclick="exportDashboard()" style="width: 100%; margin-bottom: 0.5rem;">
+                    <i class="fas fa-download"></i> 导出报告
+                </button>
+                <button class="btn btn-secondary" onclick="sendEmailReport()" style="width: 100%; margin-bottom: 0.5rem;">
+                    <i class="fas fa-envelope"></i> 发送邮件
+                </button>
+                <button class="btn btn-warning" onclick="generateDailyReport()" style="width: 100%;">
+                    <i class="fas fa-file-alt"></i> 生成日报
+                </button>
+            </div>
+        </div>
+
+        <!-- 右侧主内容区 -->
+        <div class="content-area">
+            <!-- 顶部标题栏 -->
+            <div class="header">
+                <div class="logo">AGV</div>
+                <div class="title">系统整体状态分析仪表盘</div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="showHelp()">
+                        <i class="fas fa-question-circle"></i> 帮助
+                    </button>
+                    <button class="btn btn-secondary" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i> 全屏
+                    </button>
+                    <button class="btn btn-success" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> 刷新
+                    </button>
+                </div>
+            </div>
+
+            <!-- 仪表盘内容 -->
+            <div class="dashboard-content">
+                <div class="dashboard-grid">
+                    <!-- 系统健康度 -->
+                    <div class="dashboard-widget widget-large">
+                        <div class="widget-header">
+                            <h3 class="widget-title"><i class="fas fa-heartbeat"></i> 系统健康度</h3>
+                            <div class="widget-actions">
+                                <button class="widget-action-btn" onclick="toggleHealthDetails()" title="详细信息">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="health-indicator" id="healthIndicator">
+                            <!-- 健康度指示器由JavaScript生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 状态概览 -->
+                    <div class="dashboard-widget widget-large">
+                        <div class="widget-header">
+                            <h3 class="widget-title"><i class="fas fa-tachometer-alt"></i> 状态概览</h3>
+                            <div class="widget-actions">
+                                <button class="widget-action-btn" onclick="toggleStatusView()" title="切换视图">
+                                    <i class="fas fa-chart-bar"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="status-cards" id="statusOverview">
+                            <!-- 状态卡片由JavaScript生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 任务性能趋势 -->
+                    <div class="dashboard-widget widget-xlarge">
+                        <div class="widget-header">
+                            <h3 class="widget-title"><i class="fas fa-tasks"></i> 任务性能趋势</h3>
+                            <div class="widget-actions">
+                                <button class="widget-action-btn" onclick="toggleTaskChartType()" title="切换图表类型">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </button>
+                                <button class="widget-action-btn" onclick="downloadTaskData()" title="下载数据">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="taskPerformanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- AGV性能排名 -->
+                    <div class="dashboard-widget widget-medium">
+                        <div class="widget-header">
+                            <h3 class="widget-title"><i class="fas fa-trophy"></i> AGV性能排名</h3>
+                            <div class="widget-actions">
+                                <button class="widget-action-btn" onclick="changeLeaderboardMetric()" title="切换指标">
+                                    <i class="fas fa-sort-amount-down"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="leaderboard" id="agvLeaderboard">
+                            <!-- AGV排行榜由JavaScript生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 资源利用率 -->
+                    <div class="dashboard-widget widget-large">
+                        <div class="widget-header">
+                            <h3 class="widget-title"><i class="fas fa-microchip"></i> 资源利用率</h3>
+                            <div class="widget-actions">
+                                <button class="widget-action-btn" onclick="toggleResourceChart()" title="切换视图">
+                                    <i class="fas fa-chart-pie"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="resourceUtilizationChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 性能指标 -->
+                    <div class="dashboard-widget widget-large">
+                        <div class="widget-header">
+                            <h3 class="widget-title"><i class="fas fa-chart-bar"></i> 关键性能指标</h3>
+                            <div class="widget-actions">
+                                <button class="widget-action-btn" onclick="toggleKPIView()" title="切换视图">
+                                    <i class="fas fa-th"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="performance-metrics" id="performanceMetrics">
+                            <!-- 性能指标由JavaScript生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 故障热力图 -->
+                    <div class="dashboard-widget widget-medium">
+                        <div class="widget-header">
+                            <h3 class="widget-title"><i class="fas fa-map-marked-alt"></i> 故障热力图</h3>
+                            <div class="widget-actions">
+                                <button class="widget-action-btn" onclick="toggleHeatmapView()" title="切换视图">
+                                    <i class="fas fa-layer-group"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="heatmapContainer">
+                            <!-- 热力图由JavaScript生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 详细分析表 -->
+                    <div class="dashboard-widget widget-full">
+                        <div class="widget-header">
+                            <h3 class="widget-title"><i class="fas fa-table"></i> 详细分析表</h3>
+                            <div class="widget-actions">
+                                <button class="widget-action-btn" onclick="exportTableData()" title="导出数据">
+                                    <i class="fas fa-file-export"></i>
+                                </button>
+                                <button class="widget-action-btn" onclick="filterTable()" title="筛选">
+                                    <i class="fas fa-filter"></i>
+                                </button>
+                                <button class="widget-action-btn" onclick="sortTable()" title="排序">
+                                    <i class="fas fa-sort-amount-down"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="analysis-table" id="analysisTable">
+                                <!-- 分析表格由JavaScript生成 -->
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部状态栏 -->
+            <div class="status-bar">
+                <div class="status-items">
+                    <div class="status-item">
+                        <span class="status-label">最后更新:</span>
+                        <span class="status-value" id="lastUpdate">--:--:--</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">数据延迟:</span>
+                        <span class="status-value" id="dataLatency">0秒</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">处理速率:</span>
+                        <span class="status-value" id="processingRate">0/秒</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">系统负载:</span>
+                        <span class="status-value" id="systemLoad">正常</span>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">自动刷新:</span>
+                    <span class="status-value" id="autoRefreshStatus">开启</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">正在加载数据...</div>
+    </div>
+
+    <script>
+        // ==================== 全局变量 ====================
+        const COLOR_SCHEME = {
+            primary: '#7289da',
+            success: '#43b581',
+            warning: '#faa61a',
+            danger: '#f04747',
+            info: '#8a8f98',
+            dark: '#2c2f33'
+        };
+
+        let currentTimeRange = 'today';
+        let currentDataSource = 'realtime';
+        let refreshInterval = 10; // 秒
+        let refreshTimer = null;
+        let charts = {};
+        let systemData = {};
+        let lastUpdateTime = new Date();
+        
+        // 模拟数据
+        const MOCK_DATA = {
+            agvs: [
+                { id: 'AGV-01', name: '精拣号', tasks_completed: 142, efficiency: 94.5, battery: 85, status: 'running', uptime: 168.5 },
+                { id: 'AGV-02', name: '迅捷二号', tasks_completed: 118, efficiency: 91.2, battery: 92, status: 'idle', uptime: 142.3 },
+                { id: 'AGV-03', name: '大力三号', tasks_completed: 203, efficiency: 88.7, battery: 45, status: 'warning', uptime: 256.7 },
+                { id: 'AGV-04', name: '精准四号', tasks_completed: 87, efficiency: 96.3, battery: 72, status: 'running', uptime: 98.2 },
+                { id: 'AGV-05', name: '稳定五号', tasks_completed: 65, efficiency: 82.4, battery: 18, status: 'charging', uptime: 76.5 }
+            ],
+            tasks: {
+                total: 615,
+                completed: 589,
+                failed: 12,
+                pending: 14,
+                success_rate: 95.8,
+                avg_completion_time: 8.5, // 分钟
+                peak_hour: '14:00',
+                daily_trend: [45, 52, 48, 61, 55, 68, 72, 65, 58, 51, 47, 42, 38, 35, 40, 52, 61, 68, 72, 65, 58, 49, 44, 39]
+            },
+            system: {
+                health_score: 88.5,
+                cpu_usage: 42.3,
+                memory_usage: 65.7,
+                disk_usage: 32.4,
+                network_latency: 24.8, // ms
+                response_time: 128.6, // ms
+                agv_utilization: 76.3,
+                system_load: 3.2
+            },
+            alerts: [
+                { id: 1, type: 'warning', title: 'AGV-05电池电量低', time: '5分钟前', description: '电池电量低于20%，建议充电' },
+                { id: 2, type: 'info', title: '系统备份完成', time: '2小时前', description: '系统数据备份已成功完成' },
+                { id: 3, type: 'error', title: '网络连接不稳定', time: '15分钟前', description: '检测到网络延迟增加' },
+                { id: 4, type: 'info', title: '每日维护提醒', time: '1天前', description: '请进行日常系统维护检查' }
+            ],
+            performance: {
+                today: { tasks: 156, efficiency: 95.2, response: 128 },
+                yesterday: { tasks: 142, efficiency: 94.8, response: 135 },
+                week: { tasks: 1028, efficiency: 95.8, response: 126 },
+                month: { tasks: 4125, efficiency: 95.1, response: 132 }
+            }
+        };
+        
+        // ==================== 初始化 ====================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化图表
+            initCharts();
+            
+            // 加载初始数据
+            loadData();
+            
+            // 设置自动刷新
+            startAutoRefresh();
+            
+            // 更新UI
+            updateUI();
+        });
+        
+        // ==================== 图表初始化 ====================
+        
+        function initCharts() {
+            // 任务性能趋势图
+            const taskCtx = document.getElementById('taskPerformanceChart').getContext('2d');
+            charts.taskPerformance = new Chart(taskCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
+                    datasets: [
+                        {
+                            label: '任务数量',
+                            data: [],
+                            borderColor: COLOR_SCHEME.primary,
+                            backgroundColor: COLOR_SCHEME.primary + '20',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '成功率',
+                            data: [],
+                            borderColor: COLOR_SCHEME.success,
+                            backgroundColor: COLOR_SCHEME.success + '20',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: '#40444b'
+                            },
+                            ticks: {
+                                color: '#8a8f98'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            grid: {
+                                color: '#40444b'
+                            },
+                            ticks: {
+                                color: '#8a8f98'
+                            },
+                            title: {
+                                display: true,
+                                text: '任务数量',
+                                color: '#8a8f98'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                color: '#8a8f98',
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: '成功率 (%)',
+                                color: '#8a8f98'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff',
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: COLOR_SCHEME.primary,
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+            
+            // 资源利用率图表
+            const resourceCtx = document.getElementById('resourceUtilizationChart').getContext('2d');
+            charts.resourceUtilization = new Chart(resourceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['CPU', '内存', '磁盘', '网络', 'AGV', '其他'],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            COLOR_SCHEME.primary,
+                            COLOR_SCHEME.success,
+                            COLOR_SCHEME.warning,
+                            COLOR_SCHEME.danger,
+                            '#9b59b6',
+                            COLOR_SCHEME.info
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#23272a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#ffffff',
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.parsed}%`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+        
+        // ==================== 数据加载 ====================
+        
+        function loadData() {
+            showLoading('正在加载系统数据...');
+            
+            // 模拟异步加载
+            setTimeout(() => {
+                // 这里应该是真实的API调用
+                // 使用模拟数据
+                systemData = JSON.parse(JSON.stringify(MOCK_DATA));
+                
+                // 添加一些动态变化
+                updateDynamicData();
+                
+                // 更新所有图表
+                updateAllCharts();
+                
+                // 更新UI
+                updateUI();
+                
+                // 更新最后更新时间
+                updateLastUpdateTime();
+                
+                hideLoading();
+            }, 800);
+        }
+        
+        function updateDynamicData() {
+            if (!systemData) return;
+            
+            // 添加一些随机变化，模拟实时数据
+            const now = new Date();
+            const hour = now.getHours();
+            
+            // 更新任务数据
+            systemData.tasks.total += Math.floor(Math.random() * 5);
+            systemData.tasks.completed += Math.floor(Math.random() * 5);
+            systemData.tasks.success_rate = Math.min(99.9, Math.max(90, 
+                systemData.tasks.success_rate + (Math.random() - 0.5) * 0.2
+            ));
+            
+            // 更新AGV状态
+            systemData.agvs.forEach(agv => {
+                // 电池消耗
+                if (agv.status === 'running') {
+                    agv.battery = Math.max(5, agv.battery - Math.random() * 2);
+                } else if (agv.status === 'charging') {
+                    agv.battery = Math.min(100, agv.battery + Math.random() * 8);
+                }
+                
+                // 状态变化
+                if (agv.battery < 20 && agv.status !== 'charging') {
+                    agv.status = 'warning';
+                } else if (agv.battery > 90 && agv.status === 'charging') {
+                    agv.status = 'idle';
+                }
+                
+                // 效率变化
+                agv.efficiency = Math.min(99.9, Math.max(80, 
+                    agv.efficiency + (Math.random() - 0.5) * 0.3
+                ));
+            });
+            
+            // 更新系统指标
+            systemData.system.health_score = Math.min(100, Math.max(60, 
+                systemData.system.health_score + (Math.random() - 0.5) * 0.5
+            ));
+            
+            systemData.system.cpu_usage = Math.min(100, Math.max(20, 
+                systemData.system.cpu_usage + (Math.random() - 0.5) * 3
+            ));
+            
+            systemData.system.agv_utilization = Math.min(100, Math.max(40, 
+                systemData.system.agv_utilization + (Math.random() - 0.5) * 2
+            ));
+            
+            // 根据时间生成任务趋势
+            const hourIndex = hour;
+            if (hourIndex < 24) {
+                systemData.tasks.daily_trend[hourIndex] = 
+                    Math.floor(30 + Math.sin(hourIndex / 24 * Math.PI) * 40 + Math.random() * 20);
+            }
+        }
+        
+        // ==================== 图表更新 ====================
+        
+        function updateAllCharts() {
+            if (!systemData) return;
+            
+            updateTaskPerformanceChart();
+            updateResourceUtilizationChart();
+            updateHealthIndicator();
+            updateStatusOverview();
+            updatePerformanceMetrics();
+            updateAgvLeaderboard();
+            updateHeatmap();
+            updateAnalysisTable();
+        }
+        
+        function updateTaskPerformanceChart() {
+            if (!charts.taskPerformance || !systemData) return;
+            
+            const chart = charts.taskPerformance;
+            const trend = systemData.tasks.daily_trend;
+            
+            // 生成成功率数据
+            const successRates = trend.map(value => 
+                Math.min(99.9, Math.max(90, 95 + (Math.random() - 0.5) * 10))
+            );
+            
+            chart.data.datasets[0].data = trend.slice(0, 12);
+            chart.data.datasets[1].data = successRates.slice(0, 12);
+            
+            chart.update('none');
+        }
+        
+        function updateResourceUtilizationChart() {
+            if (!charts.resourceUtilization || !systemData) return;
+            
+            const chart = charts.resourceUtilization;
+            const system = systemData.system;
+            
+            chart.data.datasets[0].data = [
+                system.cpu_usage,
+                system.memory_usage,
+                system.disk_usage,
+                system.agv_utilization,
+                15.3, // 其他资源
+                100 - (system.cpu_usage + system.memory_usage + system.disk_usage + system.agv_utilization + 15.3)
+            ];
+            
+            chart.update('none');
+        }
+        
+        // ==================== UI组件更新 ====================
+        
+        function updateHealthIndicator() {
+            if (!systemData) return;
+            
+            const healthScore = systemData.system.health_score;
+            const healthColor = getHealthColor(healthScore);
+            
+            document.getElementById('healthIndicator').innerHTML = `
+                <div class="health-gauge">
+                    <canvas id="healthGaugeCanvas" width="120" height="120"></canvas>
+                    <div class="health-value">
+                        <div class="health-score" style="color: ${healthColor};">${healthScore.toFixed(1)}</div>
+                        <div class="health-label">健康度</div>
+                    </div>
+                </div>
+                <div class="health-details">
+                    <div class="health-item">
+                        <div class="health-item-label">
+                            <i class="fas fa-microchip"></i>
+                            <span>CPU使用率</span>
+                        </div>
+                        <div class="health-item-value" style="color: ${getUsageColor(systemData.system.cpu_usage)}">
+                            ${systemData.system.cpu_usage.toFixed(1)}%
+                        </div>
+                    </div>
+                    <div class="health-item">
+                        <div class="health-item-label">
+                            <i class="fas fa-memory"></i>
+                            <span>内存使用率</span>
+                        </div>
+                        <div class="health-item-value" style="color: ${getUsageColor(systemData.system.memory_usage)}">
+                            ${systemData.system.memory_usage.toFixed(1)}%
+                        </div>
+                    </div>
+                    <div class="health-item">
+                        <div class="health-item-label">
+                            <i class="fas fa-hdd"></i>
+                            <span>磁盘使用率</span>
+                        </div>
+                        <div class="health-item-value" style="color: ${getUsageColor(systemData.system.disk_usage)}">
+                            ${systemData.system.disk_usage.toFixed(1)}%
+                        </div>
+                    </div>
+                    <div class="health-item">
+                        <div class="health-item-label">
+                            <i class="fas fa-robot"></i>
+                            <span>AGV利用率</span>
+                        </div>
+                        <div class="health-item-value" style="color: ${getUsageColor(systemData.system.agv_utilization)}">
+                            ${systemData.system.agv_utilization.toFixed(1)}%
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 绘制仪表盘
+            drawHealthGauge(healthScore, healthColor);
+        }
+        
+        function drawHealthGauge(score, color) {
+            const canvas = document.getElementById('healthGaugeCanvas');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 50;
+            
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制背景圆弧
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI * 0.8, Math.PI * 2.2);
+            ctx.strokeStyle = '#40444b';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+            
+            // 绘制进度圆弧
+            const endAngle = Math.PI * 0.8 + (Math.PI * 1.4) * (score / 100);
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI * 0.8, endAngle);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            
+            // 添加动画效果
+            canvas.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                canvas.style.transform = 'scale(1)';
+            }, 300);
+        }
+        
+        function updateStatusOverview() {
+            if (!systemData) return;
+            
+            const agvs = systemData.agvs;
+            const statusCounts = {
+                running: agvs.filter(a => a.status === 'running').length,
+                idle: agvs.filter(a => a.status === 'idle').length,
+                warning: agvs.filter(a => a.status === 'warning').length,
+                charging: agvs.filter(a => a.status === 'charging').length,
+                offline: agvs.filter(a => a.status === 'offline').length
+            };
+            
+            const tasks = systemData.tasks;
+            
+            document.getElementById('statusOverview').innerHTML = `
+                <div class="status-card">
+                    <div class="status-icon success">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="status-count">${statusCounts.running}</div>
+                    <div class="status-label">运行中AGV</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-icon info">
+                        <i class="fas fa-bed"></i>
+                    </div>
+                    <div class="status-count">${statusCounts.idle}</div>
+                    <div class="status-label">空闲AGV</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-icon warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="status-count">${statusCounts.warning}</div>
+                    <div class="status-label">告警AGV</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-icon success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="status-count">${tasks.completed}</div>
+                    <div class="status-label">完成任务</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-icon error">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="status-count">${tasks.failed}</div>
+                    <div class="status-label">失败任务</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-icon info">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="status-count">${tasks.pending}</div>
+                    <div class="status-label">待处理任务</div>
+                </div>
+            `;
+        }
+        
+        function updatePerformanceMetrics() {
+            if (!systemData) return;
+            
+            const tasks = systemData.tasks;
+            const performance = systemData.performance;
+            
+            document.getElementById('performanceMetrics').innerHTML = `
+                <div class="performance-item">
+                    <div class="performance-header">
+                        <span class="performance-label">任务成功率</span>
+                        <div class="trend-indicator">
+                            <i class="fas fa-arrow-up trend-up"></i>
+                            <span class="performance-change positive">+0.4%</span>
+                        </div>
+                    </div>
+                    <div class="performance-value">${tasks.success_rate.toFixed(1)}%</div>
+                    <div class="chart-container" style="height: 40px;">
+                        <canvas id="successRateChart"></canvas>
+                    </div>
+                </div>
+                <div class="performance-item">
+                    <div class="performance-header">
+                        <span class="performance-label">平均响应时间</span>
+                        <div class="trend-indicator">
+                            <i class="fas fa-arrow-down trend-down"></i>
+                            <span class="performance-change positive">-7ms</span>
+                        </div>
+                    </div>
+                    <div class="performance-value">${systemData.system.response_time.toFixed(1)}ms</div>
+                    <div class="chart-container" style="height: 40px;">
+                        <canvas id="responseTimeChart"></canvas>
+                    </div>
+                </div>
+                <div class="performance-item">
+                    <div class="performance-header">
+                        <span class="performance-label">今日任务数</span>
+                        <div class="trend-indicator">
+                            <i class="fas fa-arrow-up trend-up"></i>
+                            <span class="performance-change positive">+14</span>
+                        </div>
+                    </div>
+                    <div class="performance-value">${performance.today.tasks}</div>
+                    <div class="chart-container" style="height: 40px;">
+                        <canvas id="todayTasksChart"></canvas>
+                    </div>
+                </div>
+                <div class="performance-item">
+                    <div class="performance-header">
+                        <span class="performance-label">系统负载</span>
+                        <div class="trend-indicator">
+                            <i class="fas fa-minus trend-flat"></i>
+                            <span class="performance-change">稳定</span>
+                        </div>
+                    </div>
+                    <div class="performance-value">${systemData.system.system_load.toFixed(1)}</div>
+                    <div class="chart-container" style="height: 40px;">
+                        <canvas id="systemLoadChart"></canvas>
+                    </div>
+                </div>
+            `;
+            
+            // 绘制小型趋势图
+            drawMiniCharts();
+        }
+        
+        function drawMiniCharts() {
+            // 绘制小型趋势图
+            const miniCharts = [
+                { id: 'successRateChart', data: [95.2, 94.8, 95.6, 95.8, 96.1, 95.7, 95.9], color: COLOR_SCHEME.success },
+                { id: 'responseTimeChart', data: [135, 132, 128, 126, 124, 126, 128], color: COLOR_SCHEME.primary },
+                { id: 'todayTasksChart', data: [142, 156, 148, 161, 155, 168, 172], color: COLOR_SCHEME.warning },
+                { id: 'systemLoadChart', data: [3.5, 3.2, 3.4, 3.1, 3.3, 3.2, 3.2], color: COLOR_SCHEME.info }
+            ];
+            
+            miniCharts.forEach(chartConfig => {
+                const canvas = document.getElementById(chartConfig.id);
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                const width = canvas.width = canvas.clientWidth;
+                const height = canvas.height = canvas.clientHeight;
+                
+                // 清除画布
+                ctx.clearRect(0, 0, width, height);
+                
+                // 计算数据范围
+                const data = chartConfig.data;
+                const minValue = Math.min(...data);
+                const maxValue = Math.max(...data);
+                const range = maxValue - minValue;
+                
+                // 绘制网格线
+                ctx.strokeStyle = '#40444b';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, height * 0.5);
+                ctx.lineTo(width, height * 0.5);
+                ctx.stroke();
+                
+                // 绘制趋势线
+                ctx.beginPath();
+                ctx.strokeStyle = chartConfig.color;
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                
+                data.forEach((value, index) => {
+                    const x = (index / (data.length - 1)) * width;
+                    const y = height - ((value - minValue) / range) * height;
+                    
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                
+                ctx.stroke();
+            });
+        }
+        
+        function updateAgvLeaderboard() {
+            if (!systemData) return;
+            
+            const agvs = [...systemData.agvs];
+            // 按完成的任务数排序
+            agvs.sort((a, b) => b.tasks_completed - a.tasks_completed);
+            
+            document.getElementById('agvLeaderboard').innerHTML = agvs.map((agv, index) => `
+                <div class="leaderboard-item">
+                    <div class="leaderboard-rank">${index + 1}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">${agv.id} - ${agv.name}</div>
+                        <div class="leaderboard-details">效率: ${agv.efficiency.toFixed(1)}% | 电池: ${agv.battery}%</div>
+                    </div>
+                    <div class="leaderboard-value">${agv.tasks_completed}</div>
+                </div>
+            `).join('');
+        }
+        
+        function updateHeatmap() {
+            if (!systemData) return;
+            
+            // 生成模拟的故障热力图数据
+            const hours = 24;
+            const days = 7;
+            const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            
+            let html = '';
+            
+            // 生成热力图网格
+            for (let day = 0; day < days; day++) {
+                for (let hour = 0; hour < hours; hour += 4) { // 每4小时一格
+                    // 模拟故障频率
+                    const faultLevel = Math.floor(Math.random() * 5);
+                    const color = getHeatmapColor(faultLevel);
+                    const tooltip = `${dayNames[day]} ${hour}:00-${hour+3}:00<br>故障次数: ${faultLevel}`;
+                    
+                    html += `
+                        <div class="heatmap-cell" style="background-color: ${color};" title="${tooltip}">
+                            ${faultLevel > 0 ? faultLevel : ''}
+                        </div>
+                    `;
+                }
+            }
+            
+            // 添加图例
+            html += `
+                <div class="heatmap-legend">
+                    <div class="heatmap-legend-item">
+                        <div class="heatmap-legend-color" style="background-color: ${getHeatmapColor(0)};"></div>
+                        <span>无故障</span>
+                    </div>
+                    <div class="heatmap-legend-item">
+                        <div class="heatmap-legend-color" style="background-color: ${getHeatmapColor(2)};"></div>
+                        <span>中等</span>
+                    </div>
+                    <div class="heatmap-legend-item">
+                        <div class="heatmap-legend-color" style="background-color: ${getHeatmapColor(4)};"></div>
+                        <span>高频</span>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('heatmapContainer').innerHTML = html;
+        }
+        
+        function updateAnalysisTable() {
+            if (!systemData) return;
+            
+            const agvs = systemData.agvs;
+            const tasks = systemData.tasks;
+            
+            let tableHTML = `
+                <thead>
+                    <tr>
+                        <th>AGV编号</th>
+                        <th>名称</th>
+                        <th>状态</th>
+                        <th>完成任务数</th>
+                        <th>效率</th>
+                        <th>电池</th>
+                        <th>运行时间(小时)</th>
+                        <th>最后任务</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            agvs.forEach(agv => {
+                const statusClass = getStatusClass(agv.status);
+                const statusText = getStatusText(agv.status);
+                const lastTaskTime = new Date(Date.now() - Math.random() * 3600000).toLocaleTimeString('zh-CN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                tableHTML += `
+                    <tr>
+                        <td>${agv.id}</td>
+                        <td><strong>${agv.name}</strong></td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>${agv.tasks_completed}</td>
+                        <td>${agv.efficiency.toFixed(1)}%</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div style="width: 40px; height: 8px; background: #40444b; border-radius: 4px; overflow: hidden;">
+                                    <div style="width: ${agv.battery}%; height: 100%; background-color: ${getBatteryColor(agv.battery)};"></div>
+                                </div>
+                                <span>${agv.battery}%</span>
+                            </div>
+                        </td>
+                        <td>${agv.uptime.toFixed(1)}</td>
+                        <td>${lastTaskTime}</td>
+                    </tr>
+                `;
+            });
+            
+            // 添加汇总行
+            tableHTML += `
+                <tr style="background: rgba(114, 137, 218, 0.1);">
+                    <td colspan="3"><strong>总计</strong></td>
+                    <td><strong>${tasks.total}</strong></td>
+                    <td><strong>${tasks.success_rate.toFixed(1)}%</strong></td>
+                    <td colspan="2">平均完成时间: <strong>${tasks.avg_completion_time}分钟</strong></td>
+                    <td>高峰时段: <strong>${tasks.peak_hour}</strong></td>
+                </tr>
+            `;
+            
+            tableHTML += '</tbody>';
+            
+            document.getElementById('analysisTable').innerHTML = tableHTML;
+        }
+        
+        // ==================== 控制面板更新 ====================
+        
+        function updateUI() {
+            if (!systemData) return;
+            
+            // 更新关键指标
+            document.getElementById('totalTasks').textContent = systemData.tasks.total;
+            document.getElementById('successRate').textContent = systemData.tasks.success_rate.toFixed(1) + '%';
+            document.getElementById('avgResponse').textContent = systemData.system.response_time.toFixed(1) + 'ms';
+            document.getElementById('agvUtilization').textContent = systemData.system.agv_utilization.toFixed(1) + '%';
+            
+            // 更新警报列表
+            updateAlertList();
+            
+            // 更新状态栏
+            updateStatusBar();
+        }
+        
+        function updateAlertList() {
+            if (!systemData || !systemData.alerts) return;
+            
+            const alerts = systemData.alerts;
+            let alertHTML = '';
+            
+            alerts.forEach(alert => {
+                const iconClass = alert.type === 'error' ? 'fas fa-exclamation-circle' :
+                                 alert.type === 'warning' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle';
+                
+                alertHTML += `
+                    <div class="alert-item ${alert.type}">
+                        <div class="alert-icon ${alert.type}">
+                            <i class="${iconClass}"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">${alert.title}</div>
+                            <div class="alert-time">${alert.time}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('alertList').innerHTML = alertHTML;
+        }
+        
+        function updateStatusBar() {
+            const now = new Date();
+            const timeDiff = Math.floor((now - lastUpdateTime) / 1000);
+            
+            document.getElementById('dataLatency').textContent = timeDiff + '秒';
+            document.getElementById('processingRate').textContent = 
+                Math.floor(systemData.tasks.total / 24) + '/小时';
+            
+            const load = systemData.system.system_load;
+            const loadText = load < 3 ? '正常' : load < 5 ? '偏高' : '过高';
+            const loadColor = load < 3 ? '#43b581' : load < 5 ? '#faa61a' : '#f04747';
+            
+            document.getElementById('systemLoad').textContent = loadText;
+            document.getElementById('systemLoad').style.color = loadColor;
+        }
+        
+        function updateLastUpdateTime() {
+            lastUpdateTime = new Date();
+            const timeStr = lastUpdateTime.toLocaleTimeString('zh-CN');
+            document.getElementById('lastUpdate').textContent = timeStr;
+        }
+        
+        // ==================== 工具函数 ====================
+        
+        function getHealthColor(score) {
+            if (score >= 90) return COLOR_SCHEME.success;
+            if (score >= 80) return COLOR_SCHEME.warning;
+            return COLOR_SCHEME.danger;
+        }
+        
+        function getUsageColor(usage) {
+            if (usage < 60) return COLOR_SCHEME.success;
+            if (usage < 80) return COLOR_SCHEME.warning;
+            return COLOR_SCHEME.danger;
+        }
+        
+        function getBatteryColor(battery) {
+            if (battery > 50) return COLOR_SCHEME.success;
+            if (battery > 20) return COLOR_SCHEME.warning;
+            return COLOR_SCHEME.danger;
+        }
+        
+        function getStatusClass(status) {
+            const classMap = {
+                'running': 'online',
+                'idle': 'idle',
+                'warning': 'warning',
+                'charging': 'info',
+                'offline': 'offline'
+            };
+            return classMap[status] || 'offline';
+        }
+        
+        function getStatusText(status) {
+            const textMap = {
+                'running': '运行中',
+                'idle': '空闲',
+                'warning': '告警',
+                'charging': '充电中',
+                'offline': '离线'
+            };
+            return textMap[status] || '未知';
+        }
+        
+        function getHeatmapColor(level) {
+            const colors = [
+                '#2c2f33',    // 0 - 无故障
+                '#43b58140',  // 1 - 低
+                '#faa61a60',  // 2 - 中
+                '#faa61a90',  // 3 - 中高
+                '#f04747c0'   // 4 - 高
+            ];
+            return colors[Math.min(level, colors.length - 1)];
+        }
+        
+        // ==================== 控制函数 ====================
+        
+        function changeTimeRange(range) {
+            currentTimeRange = range;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.time-option').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            // 重新加载数据
+            loadData();
+        }
+        
+        function changeDataSource() {
+            currentDataSource = document.getElementById('dataSource').value;
+            loadData();
+        }
+        
+        function changeRefreshInterval() {
+            refreshInterval = parseInt(document.getElementById('refreshInterval').value);
+            document.getElementById('autoRefreshStatus').textContent = 
+                refreshInterval > 0 ? '开启' : '关闭';
+            
+            // 重新设置定时器
+            clearInterval(refreshTimer);
+            if (refreshInterval > 0) {
+                startAutoRefresh();
+            }
+        }
+        
+        function startAutoRefresh() {
+            if (refreshInterval > 0) {
+                refreshTimer = setInterval(() => {
+                    loadData();
+                }, refreshInterval * 1000);
+            }
+        }
+        
+        function refreshData() {
+            loadData();
+        }
+        
+        // ==================== 导出和报告 ====================
+        
+        function exportDashboard() {
+            showLoading('正在生成报告...');
+            
+            setTimeout(() => {
+                const reportData = {
+                    timestamp: new Date().toISOString(),
+                    timeRange: currentTimeRange,
+                    systemData: systemData,
+                    summary: {
+                        healthScore: systemData.system.health_score,
+                        totalTasks: systemData.tasks.total,
+                        successRate: systemData.tasks.success_rate,
+                        agvCount: systemData.agvs.length
+                    }
+                };
+                
+                const dataStr = JSON.stringify(reportData, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileName = `agv-analysis-report-${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileName);
+                linkElement.click();
+                
+                hideLoading();
+                alert('分析报告已导出为JSON文件');
+            }, 1500);
+        }
+        
+        function sendEmailReport() {
+            const email = prompt('请输入接收报告的邮箱地址:');
+            if (email && email.includes('@')) {
+                showLoading('正在发送邮件...');
+                
+                setTimeout(() => {
+                    hideLoading();
+                    alert(`报告已发送到 ${email}`);
+                }, 2000);
+            }
+        }
+        
+        function generateDailyReport() {
+            showLoading('正在生成日报...');
+            
+            setTimeout(() => {
+                // 创建日报HTML
+                const reportHTML = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>AGV系统日报 - ${new Date().toLocaleDateString('zh-CN')}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 40px; }
+                            .header { text-align: center; margin-bottom: 40px; }
+                            .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+                            .metric-card { border: 1px solid #ddd; border-radius: 8; padding: 20px; text-align: center; }
+                            .metric-value { font-size: 24px; font-weight: bold; margin: 10px 0; }
+                            .metric-label { color: #666; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                            th { background-color: #f5f5f5; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>AGV系统日报</h1>
+                            <h3>${new Date().toLocaleDateString('zh-CN')}</h3>
+                        </div>
+                        
+                        <div class="metric-grid">
+                            <div class="metric-card">
+                                <div class="metric-label">系统健康度</div>
+                                <div class="metric-value">${systemData.system.health_score.toFixed(1)}</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">总任务数</div>
+                                <div class="metric-value">${systemData.tasks.total}</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">任务成功率</div>
+                                <div class="metric-value">${systemData.tasks.success_rate.toFixed(1)}%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-label">AGV利用率</div>
+                                <div class="metric-value">${systemData.system.agv_utilization.toFixed(1)}%</div>
+                            </div>
+                        </div>
+                        
+                        <h2>AGV性能统计</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>AGV编号</th>
+                                    <th>完成任务数</th>
+                                    <th>效率</th>
+                                    <th>电池电量</th>
+                                    <th>状态</th>
+                                    <th>运行时间(小时)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${systemData.agvs.map(agv => `
+                                    <tr>
+                                        <td>${agv.id}</td>
+                                        <td>${agv.tasks_completed}</td>
+                                        <td>${agv.efficiency.toFixed(1)}%</td>
+                                        <td>${agv.battery}%</td>
+                                        <td>${getStatusText(agv.status)}</td>
+                                        <td>${agv.uptime.toFixed(1)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        
+                        <h2>系统警报</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>类型</th>
+                                    <th>描述</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${systemData.alerts.map(alert => `
+                                    <tr>
+                                        <td>${alert.time}</td>
+                                        <td>${alert.type === 'error' ? '错误' : alert.type === 'warning' ? '警告' : '信息'}</td>
+                                        <td>${alert.description}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </body>
+                    </html>
+                `;
+                
+                // 创建下载链接
+                const blob = new Blob([reportHTML], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `agv-daily-report-${new Date().toISOString().slice(0,10)}.html`;
+                link.click();
+                
+                URL.revokeObjectURL(url);
+                
+                hideLoading();
+                alert('日报已生成并下载');
+            }, 2000);
+        }
+        
+        // ==================== 视图控制 ====================
+        
+        function toggleFullscreen() {
+            const elem = document.documentElement;
+            
+            if (!document.fullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) { /* Safari */
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE11 */
+                    elem.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+            }
+        }
+        
+        function toggleHealthDetails() {
+            const healthIndicator = document.getElementById('healthIndicator');
+            const currentView = healthIndicator.dataset.view || 'gauge';
+            
+            if (currentView === 'gauge') {
+                // 切换到详细视图
+                healthIndicator.innerHTML = `
+                    <div style="width: 100%;">
+                        <h4 style="margin-bottom: 1rem; color: #7289da;">详细健康指标</h4>
+                        <div class="performance-metrics">
+                            ${generateDetailedMetrics()}
+                        </div>
+                    </div>
+                `;
+                healthIndicator.dataset.view = 'detailed';
+            } else {
+                // 切换回仪表盘视图
+                updateHealthIndicator();
+                healthIndicator.dataset.view = 'gauge';
+            }
+        }
+        
+        function generateDetailedMetrics() {
+            if (!systemData) return '';
+            
+            const sys = systemData.system;
+            const metrics = [
+                { label: 'CPU使用率', value: sys.cpu_usage, unit: '%', trend: '+1.2%', positive: false },
+                { label: '内存使用率', value: sys.memory_usage, unit: '%', trend: '+0.8%', positive: false },
+                { label: '磁盘使用率', value: sys.disk_usage, unit: '%', trend: '+0.3%', positive: false },
+                { label: '网络延迟', value: sys.network_latency, unit: 'ms', trend: '-2.4ms', positive: true },
+                { label: '响应时间', value: sys.response_time, unit: 'ms', trend: '-7.2ms', positive: true },
+                { label: 'AGV利用率', value: sys.agv_utilization, unit: '%', trend: '+3.1%', positive: true },
+                { label: '系统负载', value: sys.system_load, unit: '', trend: '-0.2', positive: true },
+                { label: '健康度', value: sys.health_score, unit: '', trend: '+0.5', positive: true }
+            ];
+            
+            return metrics.map(metric => `
+                <div class="performance-item">
+                    <div class="performance-header">
+                        <span class="performance-label">${metric.label}</span>
+                        <div class="trend-indicator">
+                            <i class="fas fa-arrow-${metric.positive ? 'up' : 'down'} ${metric.positive ? 'trend-up' : 'trend-down'}"></i>
+                            <span class="performance-change ${metric.positive ? 'positive' : 'negative'}">${metric.trend}</span>
+                        </div>
+                    </div>
+                    <div class="performance-value">${metric.value.toFixed(1)}${metric.unit}</div>
+                </div>
+            `).join('');
+        }
+        
+        function toggleStatusView() {
+            const statusOverview = document.getElementById('statusOverview');
+            const currentView = statusOverview.dataset.view || 'cards';
+            
+            if (currentView === 'cards') {
+                // 切换到图表视图
+                statusOverview.innerHTML = `
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="statusDistributionChart"></canvas>
+                    </div>
+                `;
+                drawStatusDistributionChart();
+                statusOverview.dataset.view = 'chart';
+            } else {
+                // 切换回卡片视图
+                updateStatusOverview();
+                statusOverview.dataset.view = 'cards';
+            }
+        }
+        
+        function drawStatusDistributionChart() {
+            const canvas = document.getElementById('statusDistributionChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const agvs = systemData.agvs;
+            
+            // 统计状态
+            const statusCounts = {
+                '运行中': agvs.filter(a => a.status === 'running').length,
+                '空闲': agvs.filter(a => a.status === 'idle').length,
+                '告警': agvs.filter(a => a.status === 'warning').length,
+                '充电中': agvs.filter(a => a.status === 'charging').length
+            };
+            
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: [
+                            COLOR_SCHEME.success,
+                            COLOR_SCHEME.info,
+                            COLOR_SCHEME.warning,
+                            '#9b59b6'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#23272a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#ffffff',
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function toggleTaskChartType() {
+            if (!charts.taskPerformance) return;
+            
+            const currentType = charts.taskPerformance.config.type;
+            const newType = currentType === 'line' ? 'bar' : 'line';
+            
+            charts.taskPerformance.config.type = newType;
+            charts.taskPerformance.update();
+        }
+        
+        function toggleResourceChart() {
+            if (!charts.resourceUtilization) return;
+            
+            const currentType = charts.resourceUtilization.config.type;
+            const newType = currentType === 'doughnut' ? 'bar' : 'doughnut';
+            
+            charts.resourceUtilization.config.type = newType;
+            charts.resourceUtilization.update();
+        }
+        
+        function toggleHeatmapView() {
+            const heatmapContainer = document.getElementById('heatmapContainer');
+            const currentView = heatmapContainer.dataset.view || 'grid';
+            
+            if (currentView === 'grid') {
+                // 切换到折线图视图
+                heatmapContainer.innerHTML = `
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="heatmapLineChart"></canvas>
+                    </div>
+                `;
+                drawHeatmapLineChart();
+                heatmapContainer.dataset.view = 'line';
+            } else {
+                // 切换回网格视图
+                updateHeatmap();
+                heatmapContainer.dataset.view = 'grid';
+            }
+        }
+        
+        function drawHeatmapLineChart() {
+            const canvas = document.getElementById('heatmapLineChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            const faultData = days.map(() => Math.floor(Math.random() * 10));
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: '故障次数',
+                        data: faultData,
+                        borderColor: COLOR_SCHEME.danger,
+                        backgroundColor: COLOR_SCHEME.danger + '20',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { color: '#40444b' },
+                            ticks: { color: '#8a8f98' }
+                        },
+                        y: {
+                            grid: { color: '#40444b' },
+                            ticks: { color: '#8a8f98' },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#ffffff' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function changeLeaderboardMetric() {
+            const agvLeaderboard = document.getElementById('agvLeaderboard');
+            const currentMetric = agvLeaderboard.dataset.metric || 'tasks';
+            
+            const metrics = {
+                tasks: { key: 'tasks_completed', label: '完成任务数' },
+                efficiency: { key: 'efficiency', label: '效率' },
+                battery: { key: 'battery', label: '电池电量' },
+                uptime: { key: 'uptime', label: '运行时间' }
+            };
+            
+            const metricKeys = Object.keys(metrics);
+            const currentIndex = metricKeys.indexOf(currentMetric);
+            const nextIndex = (currentIndex + 1) % metricKeys.length;
+            const nextMetric = metrics[metricKeys[nextIndex]];
+            
+            // 排序AGV
+            const agvs = [...systemData.agvs];
+            agvs.sort((a, b) => b[nextMetric.key] - a[nextMetric.key]);
+            
+            agvLeaderboard.innerHTML = agvs.map((agv, index) => `
+                <div class="leaderboard-item">
+                    <div class="leaderboard-rank">${index + 1}</div>
+                    <div class="leaderboard-info">
+                        <div class="leaderboard-name">${agv.id} - ${agv.name}</div>
+                        <div class="leaderboard-details">状态: ${getStatusText(agv.status)}</div>
+                    </div>
+                    <div class="leaderboard-value">${agv[nextMetric.key]}${nextMetric.key === 'efficiency' ? '%' : ''}</div>
+                </div>
+            `).join('');
+            
+            agvLeaderboard.dataset.metric = metricKeys[nextIndex];
+            
+            // 更新标题
+            const titleElement = document.querySelector('.widget-title');
+            if (titleElement) {
+                titleElement.innerHTML = `<i class="fas fa-trophy"></i> AGV${nextMetric.label}排名`;
+            }
+        }
+        
+        function toggleKPIView() {
+            const performanceMetrics = document.getElementById('performanceMetrics');
+            const currentView = performanceMetrics.dataset.view || 'grid';
+            
+            if (currentView === 'grid') {
+                // 切换到图表视图
+                performanceMetrics.innerHTML = `
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="kpiCombinedChart"></canvas>
+                    </div>
+                `;
+                drawKPICombinedChart();
+                performanceMetrics.dataset.view = 'chart';
+            } else {
+                // 切换回网格视图
+                updatePerformanceMetrics();
+                performanceMetrics.dataset.view = 'grid';
+            }
+        }
+        
+        function drawKPICombinedChart() {
+            const canvas = document.getElementById('kpiCombinedChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const labels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'];
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '任务数',
+                            data: [45, 68, 72, 65, 58, 42],
+                            borderColor: COLOR_SCHEME.primary,
+                            backgroundColor: COLOR_SCHEME.primary + '20',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '成功率',
+                            data: [94.2, 95.8, 96.3, 95.7, 95.2, 94.8],
+                            borderColor: COLOR_SCHEME.success,
+                            backgroundColor: COLOR_SCHEME.success + '20',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { color: '#40444b' },
+                            ticks: { color: '#8a8f98' }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            grid: { color: '#40444b' },
+                            ticks: { color: '#8a8f98' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: { 
+                                color: '#8a8f98',
+                                callback: value => value + '%'
+                            },
+                            min: 90,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#ffffff' } }
+                    }
+                }
+            });
+        }
+        
+        function downloadTaskData() {
+            const data = {
+                labels: charts.taskPerformance.data.labels,
+                datasets: charts.taskPerformance.data.datasets
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const link = document.createElement('a');
+            link.href = dataUri;
+            link.download = 'task-performance-data.json';
+            link.click();
+            
+            alert('任务数据已下载');
+        }
+        
+        function exportTableData() {
+            const table = document.getElementById('analysisTable');
+            const rows = table.querySelectorAll('tr');
+            let csvContent = '';
+            
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('th, td');
+                const rowData = Array.from(cols).map(col => {
+                    let text = col.textContent.trim();
+                    // 处理包含逗号的内容
+                    if (text.includes(',')) {
+                        text = `"${text}"`;
+                    }
+                    return text;
+                });
+                csvContent += rowData.join(',') + '\n';
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'agv-analysis-data.csv';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            
+            alert('表格数据已导出为CSV文件');
+        }
+        
+        function filterTable() {
+            const filter = prompt('请输入筛选条件（AGV编号、状态等）:', '');
+            if (filter) {
+                const table = document.getElementById('analysisTable');
+                const rows = table.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter.toLowerCase()) ? '' : 'none';
+                });
+                
+                alert(`已筛选包含"${filter}"的行`);
+            }
+        }
+        
+        function sortTable() {
+            const column = prompt('请输入要排序的列号（1-8）:', '4');
+            if (column >= 1 && column <= 8) {
+                const table = document.getElementById('analysisTable');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr:not(:last-child)'));
+                
+                rows.sort((a, b) => {
+                    const aVal = a.cells[column - 1].textContent;
+                    const bVal = b.cells[column - 1].textContent;
+                    
+                    // 尝试转换为数字比较
+                    const aNum = parseFloat(aVal);
+                    const bNum = parseFloat(bVal);
+                    
+                    if (!isNaN(aNum) && !isNaN(bNum)) {
+                        return bNum - aNum; // 降序排列
+                    }
+                    
+                    return bVal.localeCompare(aVal);
+                });
+                
+                // 重新排列行
+                rows.forEach(row => tbody.appendChild(row));
+                
+                alert(`已按第${column}列排序`);
+            }
+        }
+        
+        // ==================== 辅助函数 ====================
+        
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+        function showHelp() {
+            alert(`
+            🎯 AGV系统整体状态分析仪表盘使用说明
+            
+            1. 仪表盘概览
+            - 系统健康度: 整体系统状态评估
+            - 状态概览: 各状态AGV和任务统计
+            - 任务性能趋势: 实时任务完成情况
+            - AGV性能排名: 各AGV工作效能对比
+            - 资源利用率: 系统资源使用情况
+            - 关键性能指标: 核心业务指标监控
+            - 故障热力图: 故障分布和时间分析
+            - 详细分析表: 完整的AGV工作数据
+            
+            2. 时间范围控制
+            - 今日: 查看实时数据和当天趋势
+            - 本周: 查看近7天的统计趋势
+            - 本月: 查看月度统计数据和分析
+            
+            3. 数据源选择
+            - 实时数据: 当前系统运行数据
+            - 历史数据: 历史记录分析
+            - 模拟数据: 模拟运行场景
+            - 导入数据: 外部导入的数据集
+            
+            4. 刷新控制
+            - 自动刷新: 定时更新数据
+            - 手动刷新: 点击刷新按钮更新
+            - 可设置5秒、10秒、30秒、1分钟刷新间隔
+            
+            5. 导出功能
+            - 导出报告: 完整JSON格式报告
+            - 发送邮件: 邮件发送日报
+            - 生成日报: HTML格式的日报文档
+            - 数据下载: 图表和表格原始数据
+            
+            6. 视图控制
+            - 切换视图: 各部件支持多种视图模式
+            - 图表类型切换: 折线图、柱状图、饼图等
+            - 全屏模式: 全屏查看仪表盘
+            - 详细模式: 展开查看详细信息
+            
+            7. 交互功能
+            - 点击查看: 点击图表查看详细信息
+            - 鼠标悬停: 悬停显示详细数值
+            - 排序筛选: 表格数据排序和筛选
+            - 数据导出: 导出特定部件数据
+            
+            8. 状态栏信息
+            - 最后更新时间: 数据更新时间
+            - 数据延迟: 实时数据延迟
+            - 处理速率: 系统处理速度
+            - 系统负载: 当前系统负载状态
+            - 自动刷新: 刷新状态指示
+            
+            9. 快捷键
+            - R键: 刷新数据
+            - F键: 全屏切换
+            - ESC键: 退出全屏
+            - S键: 导出报告
+            - H键: 显示帮助
+            
+            🎯 使用建议: 定期检查系统健康度，关注AGV性能排名，及时处理告警信息。
+            `);
+        }
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                return;
+            }
+            
+            switch(e.key.toLowerCase()) {
+                case 'r':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        refreshData();
+                    }
+                    break;
+                case 'f':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        toggleFullscreen();
+                    }
+                    break;
+                case 'h':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        showHelp();
+                    }
+                    break;
+                case 's':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        exportDashboard();
+                    }
+                    break;
+                case 'escape':
+                    if (document.fullscreenElement) {
+                        toggleFullscreen();
+                    }
+                    break;
+            }
+        });
+        
+        // 页面卸载前清理
+        window.addEventListener('beforeunload', () => {
+            clearInterval(refreshTimer);
+        });
+    </script>
+</body>
+</html>

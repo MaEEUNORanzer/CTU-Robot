@@ -1,0 +1,207 @@
+{
+  "agvs": [
+    {
+      "id": "AGV-01",
+      "name": "精拣号",
+      "model": "X1-2000",
+      "color": "#7289da",
+      "speed": 1.2,
+      "battery": 85,
+      "status": "idle",
+      "createdAt": "2026-04-08T09:18:46.227Z"
+    },
+    {
+      "id": "AGV-02",
+      "name": "迅捷二号",
+      "model": "X1-2000",
+      "color": "#43b581",
+      "speed": 1.5,
+      "battery": 92,
+      "status": "idle",
+      "createdAt": "2026-04-08T09:18:46.227Z"
+    },
+    {
+      "id": "AGV-03",
+      "name": "大力三号",
+      "model": "X2-3000",
+      "color": "#faa61a",
+      "speed": 0.8,
+      "battery": 45,
+      "status": "running",
+      "createdAt": "2026-04-08T09:18:46.227Z"
+    }
+  ],
+  "paths": [
+    {
+      "id": "path-2",
+      "name": "包装区到装载区",
+      "agvId": "AGV-02",
+      "agvName": "迅捷二号",
+      "agvColor": "#43b581",
+      "type": "smooth",
+      "description": "从包装区运输到装载区，需要绕过障碍",
+      "waypoints": [
+        {
+          "id": "wp-7",
+          "name": "点1",
+          "x": 800,
+          "y": 360,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "end",
+          "index": 0
+        },
+        {
+          "id": "wp-1775639948763-1",
+          "name": "点2",
+          "x": 450,
+          "y": 500,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "normal",
+          "index": 1
+        },
+        {
+          "id": "wp-1775639950262-2",
+          "name": "点3",
+          "x": 250,
+          "y": 350,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "normal",
+          "index": 2
+        },
+        {
+          "id": "wp-1775639954156-3",
+          "name": "点4",
+          "x": 100,
+          "y": 500,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "normal",
+          "index": 3
+        },
+        {
+          "id": "wp-1775639957433-4",
+          "name": "点5",
+          "x": 200,
+          "y": 600,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "normal",
+          "index": 4
+        },
+        {
+          "id": "wp-1775639958684-5",
+          "name": "点6",
+          "x": 500,
+          "y": 250,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "normal",
+          "index": 5
+        }
+      ],
+      "createdAt": "2026-04-08T09:18:46.227Z",
+      "updatedAt": "2026-04-08T09:19:28.958Z"
+    },
+    {
+      "id": "path-1775639977187",
+      "name": "新建路径",
+      "agvId": "AGV-01",
+      "agvName": "精拣号",
+      "agvColor": "#7289da",
+      "type": "grid",
+      "description": "",
+      "waypoints": [
+        {
+          "id": "wp-1775639979556-0",
+          "name": "点1",
+          "x": 350,
+          "y": 550,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "start",
+          "index": 0
+        },
+        {
+          "id": "wp-1775639980354-1",
+          "name": "点2",
+          "x": 400,
+          "y": 350,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 1
+        },
+        {
+          "id": "wp-1775639981323-2",
+          "name": "点3",
+          "x": 550,
+          "y": 350,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 2
+        },
+        {
+          "id": "wp-1775639982338-3",
+          "name": "点4",
+          "x": 550,
+          "y": 550,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 3
+        },
+        {
+          "id": "wp-1775639983442-4",
+          "name": "点5",
+          "x": 800,
+          "y": 600,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 4
+        },
+        {
+          "id": "wp-1775639987169-5",
+          "name": "点6",
+          "x": 550,
+          "y": 150,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 5
+        },
+        {
+          "id": "wp-1775639988784-6",
+          "name": "点7",
+          "x": 250,
+          "y": 200,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 6
+        }
+      ],
+      "createdAt": "2026-04-08T09:19:37.187Z",
+      "updatedAt": "2026-04-08T09:19:48.784Z"
+    }
+  ],
+  "exportedAt": "2026-04-08T09:20:02.764Z",
+  "version": "1.0"
+}

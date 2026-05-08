@@ -1,0 +1,231 @@
+<div class="page-header">
+    <h1 class="page-title">调度概览</h1>
+    <p class="page-subtitle">实时监控AGV调度系统运行状态与关键指标</p>
+</div>
+
+<!-- 统计卡片 -->
+<div class="stats-container">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #1a73e8, #0d47a1);">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="stat-info">
+            <h3 id="onlineAgvCount">12</h3>
+            <p>在线AGV数量</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #4caf50, #2e7d32);">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="stat-info">
+            <h3 id="activeTasks">8</h3>
+            <p>进行中任务</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #ff9800, #ef6c00);">
+            <i class="fas fa-route"></i>
+        </div>
+        <div class="stat-info">
+            <h3 id="avgDistance">24.5</h3>
+            <p>平均任务里程(km)</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #9c27b0, #6a1b9a);">
+            <i class="fas fa-bolt"></i>
+        </div>
+        <div class="stat-info">
+            <h3 id="avgBattery">86%</h3>
+            <p>平均电量</p>
+        </div>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">实时AGV分布图</h2>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" onclick="refreshMap()">
+                <i class="fas fa-sync-alt"></i> 刷新
+            </button>
+            <button class="btn btn-primary" onclick="toggleFullscreen()">
+                <i class="fas fa-expand"></i> 全屏
+            </button>
+        </div>
+    </div>
+    
+    <div class="map-container" id="agvMap">
+        <div class="map-grid"></div>
+        <!-- AGV标记将通过JavaScript动态添加 -->
+    </div>
+    
+    <div style="margin-top: 20px; display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #4caf50;"></div>
+            <span>空闲中</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ff9800;"></div>
+            <span>任务中</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #2196f3;"></div>
+            <span>充电中</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #9c27b0;"></div>
+            <span>待机中</span>
+        </div>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="card-header">
+        <h2 class="card-title">今日任务统计</h2>
+        <div style="color: #666; font-size: 14px;">
+            <i class="fas fa-calendar-alt"></i> <span id="currentDate">2023年10月26日</span>
+        </div>
+    </div>
+    
+    <div style="display: flex; justify-content: space-around; text-align: center; margin-top: 20px;">
+        <div>
+            <div style="font-size: 32px; font-weight: 700; color: #1a73e8;" id="completedTasks">42</div>
+            <div style="color: #666; margin-top: 5px;">已完成任务</div>
+        </div>
+        <div>
+            <div style="font-size: 32px; font-weight: 700; color: #4caf50;" id="activeTasksToday">8</div>
+            <div style="color: #666; margin-top: 5px;">进行中任务</div>
+        </div>
+        <div>
+            <div style="font-size: 32px; font-weight: 700; color: #ff9800;" id="pendingTasks">3</div>
+            <div style="color: #666; margin-top: 5px;">待处理任务</div>
+        </div>
+        <div>
+            <div style="font-size: 32px; font-weight: 700; color: #f44336;" id="failedTasks">1</div>
+            <div style="color: #666; margin-top: 5px;">失败任务</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 仪表盘页面初始化
+function initDashboardPage() {
+    // 设置当前日期
+    const now = new Date();
+    const dateString = now.toLocaleDateString('zh-CN', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric'
+    });
+    document.getElementById('currentDate').textContent = dateString;
+    
+    // 初始化AGV地图
+    initAgvMap();
+    
+    // 更新统计数据
+    updateDashboardStats();
+}
+
+// 初始化AGV地图
+function initAgvMap() {
+    const mapContainer = document.getElementById('agvMap');
+    const agvPositions = [
+        { id: 'AGV01', x: 15, y: 20, status: 'idle' },
+        { id: 'AGV02', x: 30, y: 40, status: 'busy' },
+        { id: 'AGV03', x: 50, y: 60, status: 'charging' },
+        { id: 'AGV04', x: 70, y: 30, status: 'idle' },
+        { id: 'AGV05', x: 80, y: 70, status: 'busy' },
+        { id: 'AGV06', x: 20, y: 50, status: 'idle' }
+    ];
+    
+    const statusColors = {
+        'idle': '#4caf50',
+        'busy': '#ff9800',
+        'charging': '#2196f3',
+        'error': '#f44336'
+    };
+    
+    // 添加AGV标记
+    agvPositions.forEach(agv => {
+        const marker = document.createElement('div');
+        marker.className = 'agv-marker';
+        marker.textContent = agv.id;
+        marker.style.backgroundColor = statusColors[agv.status];
+        marker.style.left = `${agv.x}%`;
+        marker.style.top = `${agv.y}%`;
+        marker.title = `${agv.id} - ${getStatusText(agv.status)}`;
+        marker.onclick = () => showAgvDetails(agv.id);
+        
+        mapContainer.appendChild(marker);
+    });
+}
+
+// 获取状态文本
+function getStatusText(status) {
+    const statusMap = {
+        'idle': '空闲',
+        'busy': '任务中',
+        'charging': '充电中',
+        'error': '故障'
+    };
+    return statusMap[status] || '未知';
+}
+
+// 显示AGV详情
+function showAgvDetails(agvId) {
+    alert(`查看AGV ${agvId} 的详细信息\n功能待完善...`);
+}
+
+// 刷新地图
+function refreshMap() {
+    alert('刷新地图数据...');
+    // 在实际应用中，这里应该重新获取AGV位置数据
+}
+
+// 切换全屏
+function toggleFullscreen() {
+    const mapContainer = document.getElementById('agvMap');
+    if (!document.fullscreenElement) {
+        if (mapContainer.requestFullscreen) {
+            mapContainer.requestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
+
+// 更新仪表盘统计数据
+function updateDashboardStats() {
+    // 模拟数据更新
+    setInterval(() => {
+        const onlineCount = document.getElementById('onlineAgvCount');
+        const activeTasks = document.getElementById('activeTasks');
+        
+        // 随机更新在线AGV数量
+        if (Math.random() < 0.3) {
+            const currentCount = parseInt(onlineCount.textContent);
+            const change = Math.random() < 0.5 ? 1 : -1;
+            const newCount = Math.max(10, Math.min(15, currentCount + change));
+            onlineCount.textContent = newCount;
+        }
+        
+        // 随机更新任务数量
+        if (Math.random() < 0.4) {
+            const currentTasks = parseInt(activeTasks.textContent);
+            const change = Math.random() < 0.5 ? 1 : -1;
+            const newTasks = Math.max(5, Math.min(12, currentTasks + change));
+            activeTasks.textContent = newTasks;
+            
+            // 同时更新今日活跃任务
+            document.getElementById('activeTasksToday').textContent = newTasks;
+        }
+    }, 5000);
+}
+</script>

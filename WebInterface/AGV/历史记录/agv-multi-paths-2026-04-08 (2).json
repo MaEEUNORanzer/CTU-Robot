@@ -1,0 +1,185 @@
+{
+  "agvs": [
+    {
+      "id": "AGV-01",
+      "name": "精拣号",
+      "model": "X1-2000",
+      "color": "#7289da",
+      "speed": 1.2,
+      "battery": 85,
+      "status": "idle",
+      "createdAt": "2026-04-08T09:25:47.278Z"
+    },
+    {
+      "id": "AGV-02",
+      "name": "迅捷二号",
+      "model": "X1-2000",
+      "color": "#43b581",
+      "speed": 1.5,
+      "battery": 92,
+      "status": "idle",
+      "createdAt": "2026-04-08T09:25:47.278Z"
+    },
+    {
+      "id": "AGV-03",
+      "name": "大力三号",
+      "model": "X2-3000",
+      "color": "#faa61a",
+      "speed": 0.8,
+      "battery": 45,
+      "status": "running",
+      "createdAt": "2026-04-08T09:25:47.278Z"
+    }
+  ],
+  "paths": [
+    {
+      "id": "path-3",
+      "name": "仓库巡视路径",
+      "agvId": "AGV-03",
+      "agvName": "大力三号",
+      "agvColor": "#faa61a",
+      "type": "smooth",
+      "description": "巡视仓库各区域的固定路径",
+      "waypoints": [
+        {
+          "id": "wp-10",
+          "name": "点1",
+          "x": 350,
+          "y": 550,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 0
+        },
+        {
+          "id": "wp-11",
+          "name": "点2",
+          "x": 600,
+          "y": 550,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 1
+        },
+        {
+          "id": "wp-12",
+          "name": "点3",
+          "x": 150,
+          "y": 550,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "end",
+          "index": 2
+        },
+        {
+          "id": "wp-1775640362482-3",
+          "name": "点4",
+          "x": 450,
+          "y": 250,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 3
+        },
+        {
+          "id": "wp-1775640363911-4",
+          "name": "点5",
+          "x": 250,
+          "y": 300,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 4
+        },
+        {
+          "id": "wp-1775640373385-5",
+          "name": "点6",
+          "x": 450,
+          "y": 650,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 5
+        }
+      ],
+      "createdAt": "2026-04-08T09:25:47.278Z",
+      "updatedAt": "2026-04-08T09:26:13.385Z"
+    },
+    {
+      "id": "path-1775640380863",
+      "name": "新建路径",
+      "agvId": "AGV-01",
+      "agvName": "精拣号",
+      "agvColor": "#7289da",
+      "type": "grid",
+      "description": "",
+      "waypoints": [
+        {
+          "id": "wp-1775640382526-0",
+          "name": "点1",
+          "x": 250,
+          "y": 500,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "start",
+          "index": 0
+        },
+        {
+          "id": "wp-1775640383216-1",
+          "name": "点2",
+          "x": 500,
+          "y": 250,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 1
+        },
+        {
+          "id": "wp-1775640384001-2",
+          "name": "点3",
+          "x": 750,
+          "y": 450,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 2
+        },
+        {
+          "id": "wp-1775640384826-3",
+          "name": "点4",
+          "x": 550,
+          "y": 650,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 3
+        },
+        {
+          "id": "wp-1775640391588-4",
+          "name": "点5",
+          "x": 400,
+          "y": 650,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 4
+        }
+      ],
+      "createdAt": "2026-04-08T09:26:20.863Z",
+      "updatedAt": "2026-04-08T09:26:31.588Z"
+    }
+  ],
+  "exportedAt": "2026-04-08T09:26:41.233Z",
+  "version": "1.0"
+}

@@ -1,0 +1,253 @@
+{
+  "agvs": [
+    {
+      "id": "AGV-01",
+      "name": "精拣号",
+      "model": "X1-1000",
+      "color": "#7289da",
+      "speed": 1.2,
+      "battery": 85,
+      "status": "idle",
+      "createdAt": "2026-04-07T08:44:20.329Z"
+    },
+    {
+      "id": "AGV-02",
+      "name": "迅捷二号",
+      "model": "X1-2000",
+      "color": "#43b581",
+      "speed": 1.5,
+      "battery": 92,
+      "status": "idle",
+      "createdAt": "2026-04-07T08:44:20.329Z"
+    },
+    {
+      "id": "AGV-03",
+      "name": "大力三号",
+      "model": "X2-3000",
+      "color": "#faa61a",
+      "speed": 0.8,
+      "battery": 45,
+      "status": "running",
+      "createdAt": "2026-04-07T08:44:20.329Z"
+    }
+  ],
+  "paths": [
+    {
+      "id": "path-1",
+      "name": "仓库A到包装区",
+      "agvId": "AGV-01",
+      "agvName": "精拣号",
+      "agvColor": "#7289da",
+      "type": "straight",
+      "description": "从仓库A区运输货物到包装区",
+      "waypoints": [
+        {
+          "id": "wp-1",
+          "name": "起点",
+          "x": 150,
+          "y": 175,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "start",
+          "index": 0
+        },
+        {
+          "id": "wp-2",
+          "name": "中转点",
+          "x": 300,
+          "y": 250,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "normal",
+          "index": 1
+        },
+        {
+          "id": "wp-3",
+          "name": "终点",
+          "x": 475,
+          "y": 250,
+          "agvId": "AGV-01",
+          "agvName": "精拣号",
+          "agvColor": "#7289da",
+          "type": "end",
+          "index": 2
+        }
+      ],
+      "createdAt": "2026-04-07T08:44:20.329Z",
+      "updatedAt": "2026-04-07T08:44:20.329Z"
+    },
+    {
+      "id": "path-2",
+      "name": "包装区到装载区",
+      "agvId": "AGV-02",
+      "agvName": "迅捷二号",
+      "agvColor": "#43b581",
+      "type": "smooth",
+      "description": "从包装区运输到装载区，需要绕过障碍",
+      "waypoints": [
+        {
+          "id": "wp-4",
+          "name": "起点",
+          "x": 475,
+          "y": 250,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "start",
+          "index": 0
+        },
+        {
+          "id": "wp-5",
+          "name": "中转点1",
+          "x": 600,
+          "y": 200,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "normal",
+          "index": 1
+        },
+        {
+          "id": "wp-6",
+          "name": "中转点2",
+          "x": 750,
+          "y": 300,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "normal",
+          "index": 2
+        },
+        {
+          "id": "wp-7",
+          "name": "终点",
+          "x": 800,
+          "y": 360,
+          "agvId": "AGV-02",
+          "agvName": "迅捷二号",
+          "agvColor": "#43b581",
+          "type": "end",
+          "index": 3
+        }
+      ],
+      "createdAt": "2026-04-07T08:44:20.329Z",
+      "updatedAt": "2026-04-07T08:44:20.329Z"
+    },
+    {
+      "id": "path-3",
+      "name": "仓库巡视路径",
+      "agvId": "AGV-03",
+      "agvName": "大力三号",
+      "agvColor": "#faa61a",
+      "type": "grid",
+      "description": "巡视仓库各区域的固定路径",
+      "waypoints": [
+        {
+          "id": "wp-8",
+          "name": "起点",
+          "x": 150,
+          "y": 400,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "start",
+          "index": 0
+        },
+        {
+          "id": "wp-9",
+          "name": "检查点1",
+          "x": 350,
+          "y": 400,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 1
+        },
+        {
+          "id": "wp-10",
+          "name": "检查点2",
+          "x": 350,
+          "y": 550,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 2
+        },
+        {
+          "id": "wp-11",
+          "name": "检查点3",
+          "x": 600,
+          "y": 550,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 3
+        },
+        {
+          "id": "wp-12",
+          "name": "终点",
+          "x": 150,
+          "y": 550,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "end",
+          "index": 4
+        },
+        {
+          "id": "wp-1775551488687-5",
+          "name": "点6",
+          "x": 500,
+          "y": 350,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 5
+        },
+        {
+          "id": "wp-1775551490042-6",
+          "name": "点7",
+          "x": 700,
+          "y": 350,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 6
+        },
+        {
+          "id": "wp-1775551492274-7",
+          "name": "点8",
+          "x": 850,
+          "y": 400,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 7
+        },
+        {
+          "id": "wp-1775551494478-8",
+          "name": "点9",
+          "x": 750,
+          "y": 600,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 8
+        }
+      ],
+      "createdAt": "2026-04-07T08:44:20.329Z",
+      "updatedAt": "2026-04-07T08:44:54.478Z"
+    }
+  ],
+  "exportedAt": "2026-04-07T08:44:59.221Z",
+  "version": "1.0"
+}

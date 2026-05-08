@@ -1,0 +1,95 @@
+{
+  "agvs": [
+    {
+      "id": "AGV-01",
+      "name": "精拣号",
+      "model": "X1-1000",
+      "color": "#7289da",
+      "speed": 1.2,
+      "battery": 85,
+      "status": "idle",
+      "createdAt": "2026-04-08T05:04:33.349Z"
+    },
+    {
+      "id": "AGV-02",
+      "name": "迅捷二号",
+      "model": "X1-2000",
+      "color": "#43b581",
+      "speed": 1.5,
+      "battery": 92,
+      "status": "idle",
+      "createdAt": "2026-04-08T05:04:33.350Z"
+    },
+    {
+      "id": "AGV-03",
+      "name": "大力三号",
+      "model": "X2-3000",
+      "color": "#faa61a",
+      "speed": 0.8,
+      "battery": 45,
+      "status": "running",
+      "createdAt": "2026-04-08T05:04:33.350Z"
+    }
+  ],
+  "paths": [
+    {
+      "id": "path-1775631777230",
+      "name": "新建路径",
+      "agvId": "AGV-03",
+      "agvName": "大力三号",
+      "agvColor": "#faa61a",
+      "type": "grid",
+      "description": "",
+      "waypoints": [
+        {
+          "id": "wp-1775631781665-0",
+          "name": "点1",
+          "x": 200,
+          "y": 450,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "start",
+          "index": 0
+        },
+        {
+          "id": "wp-1775631785218-1",
+          "name": "点2",
+          "x": 1000,
+          "y": 100,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 1
+        },
+        {
+          "id": "wp-1775631801166-2",
+          "name": "点3",
+          "x": 800,
+          "y": 350,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 2
+        },
+        {
+          "id": "wp-1775631804855-3",
+          "name": "点4",
+          "x": 250,
+          "y": 100,
+          "agvId": "AGV-03",
+          "agvName": "大力三号",
+          "agvColor": "#faa61a",
+          "type": "normal",
+          "index": 3
+        }
+      ],
+      "createdAt": "2026-04-08T07:02:57.230Z",
+      "updatedAt": "2026-04-08T07:03:29.534Z"
+    }
+  ],
+  "exportedAt": "2026-04-08T07:03:35.388Z",
+  "version": "1.0"
+}

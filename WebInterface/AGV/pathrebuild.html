@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AGV多路径规划系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #1a1d21;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧控制面板 */
+        .control-panel {
+            width: 320px;
+            background: linear-gradient(180deg, #23272a 0%, #1a1d21 100%);
+            padding: 1.5rem;
+            border-right: 1px solid #40444b;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* 右侧地图区域 */
+        .map-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #2c2f33;
+            position: relative;
+        }
+
+        /* 顶部标题栏 */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background-color: #23272a;
+            border-bottom: 1px solid #40444b;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #7289da;
+            background: linear-gradient(135deg, #7289da, #5b6eae);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title {
+            font-size: 1.2rem;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7289da, #5b6eae);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(114, 137, 218, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #7289da;
+            border: 1px solid #7289da;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(114, 137, 218, 0.1);
+        }
+
+        .btn-success {
+            background: #43b581;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #3ca374;
+        }
+
+        .btn-danger {
+            background: #f04747;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d63e3e;
+        }
+
+        .btn-warning {
+            background: #faa61a;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e69516;
+        }
+
+        /* 控制面板内容 */
+        .control-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-section h3 {
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-section h3 i {
+            color: #7289da;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            color: #8a8f98;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: #2c2f33;
+            border: 1px solid #40444b;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 0.9rem;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #7289da;
+        }
+
+        /* AGV标签 */
+        .agv-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .agv-tag {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #2c2f33;
+            border: 1px solid #40444b;
+            border-radius: 20px;
+            padding: 0.5rem 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .agv-tag:hover {
+            background: #36393f;
+            border-color: #7289da;
+        }
+
+        .agv-tag.active {
+            background: rgba(114, 137, 218, 0.2);
+            border-color: #7289da;
+        }
+
+        .agv-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* AGV路径列表 */
+        .agv-paths {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .agv-path-item {
+            background: #2c2f33;
+            border: 1px solid #40444b;
+            border-radius: 6px;
+            padding: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .agv-path-item:hover {
+            background: #36393f;
+        }
+
+        .agv-path-item.active {
+            border-color: #7289da;
+            background: rgba(114, 137, 218, 0.1);
+        }
+
+        .agv-path-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .agv-path-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .agv-path-name {
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .agv-path-count {
+            font-size: 0.8rem;
+            color: #8a8f98;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .agv-path-actions {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .path-action-btn {
+            background: none;
+            border: none;
+            color: #8a8f98;
+            cursor: pointer;
+            padding: 0.2rem;
+        }
+
+        .path-action-btn:hover {
+            color: #7289da;
+        }
+
+        .agv-path-details {
+            font-size: 0.8rem;
+            color: #8a8f98;
+        }
+
+        /* 路径点列表 */
+        .waypoint-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .waypoint-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            padding: 0.6rem;
+            margin-bottom: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: move;
+        }
+
+        .waypoint-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .waypoint-index {
+            width: 24px;
+            height: 24px;
+            background: #7289da;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .waypoint-content {
+            flex: 1;
+        }
+
+        .waypoint-name {
+            color: #ffffff;
+            font-size: 0.9rem;
+        }
+
+        .waypoint-coords {
+            color: #8a8f98;
+            font-size: 0.7rem;
+        }
+
+        /* 地图容器 */
+        .map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #gridCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #1a1d21;
+        }
+
+        /* 路径点样式 */
+        .waypoint {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .waypoint:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+            box-shadow: 0 0 15px currentColor;
+            z-index: 30;
+        }
+
+        .waypoint.selected {
+            transform: translate(-50%, -50%) scale(1.3);
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .waypoint.start::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .waypoint.end::after {
+            content: '★';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            color: white;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            color: currentColor;
+        }
+
+        .waypoint-label {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 25;
+        }
+
+        .waypoint-agv-name {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            color: white;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: currentColor;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+
+        /* 路径线 */
+        .path-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .path-line svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 路径交汇点 */
+        .intersection-point {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border: 3px solid #f04747;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* 底部状态栏 */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 1.5rem;
+            background-color: #23272a;
+            border-top: 1px solid #40444b;
+        }
+
+        .status-items {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-label {
+            color: #8a8f98;
+            font-size: 0.9rem;
+        }
+
+        .status-value {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        /* 工具提示 */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #2c2f33;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: #8a8f98;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .close-modal:hover {
+            color: #ffffff;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #8a8f98;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* AGV颜色选择器 */
+        .color-picker {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: #ffffff;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        /* 路径冲突检测 */
+        .conflict-warning {
+            background: rgba(240, 71, 71, 0.1);
+            border: 1px solid #f04747;
+            border-radius: 6px;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .conflict-warning h4 {
+            color: #f04747;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .conflict-list {
+            font-size: 0.8rem;
+            color: #ffffff;
+        }
+
+        /* 路径信息面板 */
+        .path-info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #40444b;
+            border-radius: 8px;
+            padding: 1rem;
+            width: 250px;
+            z-index: 100;
+        }
+
+        .path-info-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+        }
+
+        .path-info-close {
+            background: none;
+            border: none;
+            color: #8a8f98;
+            cursor: pointer;
+        }
+
+        .path-info-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .path-info-label {
+            color: #8a8f98;
+            font-size: 0.8rem;
+        }
+
+        .path-info-value {
+            color: #ffffff;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧控制面板 -->
+        <div class="control-panel">
+            <!-- AGV管理 -->
+            <div class="control-section">
+                <h3><i class="fas fa-robot"></i> 格信智能AGV管理</h3>
+                <div class="agv-tags" id="agvTags">
+                    <!-- AGV标签由JavaScript生成 -->
+                </div>
+                <button class="btn btn-secondary" onclick="showAddAgvModal()" style="width: 100%;">
+                    <i class="fas fa-plus"></i> 添加AGV
+                </button>
+            </div>
+
+            <!-- 选中的AGV信息 -->
+            <div class="control-section" id="selectedAgvInfo" style="display: none;">
+                <h3><i class="fas fa-info-circle"></i> 当前AGV</h3>
+                <div id="agvDetails">
+                    <!-- AGV详情由JavaScript生成 -->
+                </div>
+            </div>
+
+            <!-- AGV路径列表 -->
+            <div class="control-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3><i class="fas fa-route"></i> AGV路径</h3>
+                    <button class="btn btn-success" onclick="showAddPathModal()" style="font-size: 0.8rem; padding: 0.3rem 0.6rem;">
+                        <i class="fas fa-plus"></i> 新建
+                    </button>
+                </div>
+                
+                <div class="agv-paths" id="agvPathsList">
+                    <!-- AGV路径列表由JavaScript生成 -->
+                </div>
+            </div>
+
+            <!-- 当前路径的路径点 -->
+            <div class="control-section">
+                <h3><i class="fas fa-map-marker-alt"></i> 路径点</h3>
+                <div class="waypoint-list" id="waypointList">
+                    <!-- 路径点列表由JavaScript生成 -->
+                </div>
+            </div>
+
+            <!-- 路径设置 -->
+            <div class="control-section">
+                <h3><i class="fas fa-sliders-h"></i> 路径设置</h3>
+                <div class="form-group">
+                    <label class="form-label">路径类型</label>
+                    <select class="form-select" id="pathType" onchange="updateSelectedPath()">
+                        <option value="straight">直线连接</option>
+                        <option value="smooth">平滑曲线</option>
+                        <option value="grid">网格路径</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">显示选项</label>
+                    <div style="display: flex; gap: 1rem;">
+                        <label style="display: flex; align-items: center; gap: 0.3rem;">
+                            <input type="checkbox" id="showGrid" checked onchange="toggleGrid()"> 网格
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.3rem;">
+                            <input type="checkbox" id="showAllPaths" onchange="toggleAllPaths()"> 所有路径
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 动作按钮 -->
+            <div class="control-section" style="margin-top: auto;">
+                <button class="btn btn-primary" onclick="saveAllPaths()" style="width: 100%; margin-bottom: 0.5rem;">
+                    <i class="fas fa-save"></i> 保存所有配置
+                </button>
+                <button class="btn btn-warning" onclick="checkConflicts()" style="width: 100%; margin-bottom: 0.5rem;">
+                    <i class="fas fa-exclamation-triangle"></i> 检查冲突
+                </button>
+                <button class="btn btn-danger" onclick="resetAll()" style="width: 100%;">
+                    <i class="fas fa-redo"></i> 重置全部
+                </button>
+            </div>
+        </div>
+
+        <!-- 右侧地图区域 -->
+        <div class="map-area">
+            <!-- 顶部标题栏 -->
+            <div class="header">
+                <div class="logo">AGV</div>
+                <div class="title">多AGV路径规划系统</div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="undo()">
+                        <i class="fas fa-undo"></i> 撤销
+                    </button>
+                    <button class="btn btn-secondary" onclick="redo()">
+                        <i class="fas fa-redo"></i> 重做
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportAllPaths()">
+                        <i class="fas fa-download"></i> 导出
+                    </button>
+                </div>
+            </div>
+
+            <!-- 地图容器 -->
+            <div class="map-container" id="mapContainer">
+                <canvas id="gridCanvas"></canvas>
+                <div id="pathsOverlay" class="path-line"></div>
+                <div id="waypointsContainer"></div>
+                
+                <!-- 路径信息面板 -->
+                <div id="pathInfoPanel" class="path-info-panel" style="display: none;">
+                    <div class="path-info-header">
+                        <h4 style="margin: 0; color: #7289da;">路径信息</h4>
+                        <button class="path-info-close" onclick="closePathInfo()">×</button>
+                    </div>
+                    <div id="pathInfoContent"></div>
+                </div>
+                
+                <!-- 空状态提示 -->
+                <div id="emptyState" class="empty-state" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <h3>添加AGV并开始规划</h3>
+                    <p>先添加AGV，然后创建路径并在地图上添加路径点</p>
+                </div>
+            </div>
+
+            <!-- 底部状态栏 -->
+            <div class="status-bar">
+                <div class="status-items">
+                    <div class="status-item">
+                        <span class="status-label">AGV数量:</span>
+                        <span class="status-value" id="agvCount">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">路径数量:</span>
+                        <span class="status-value" id="pathCount">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">路径点总数:</span>
+                        <span class="status-value" id="totalWaypoints">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">冲突检测:</span>
+                        <span class="status-value" id="conflictStatus" style="color: #43b581;">无冲突</span>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">状态:</span>
+                    <span class="status-value" id="statusText">就绪</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加AGV模态框 -->
+    <div id="addAgvModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-robot"></i> 添加AGV</h3>
+                <button class="close-modal" onclick="closeAddAgvModal()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">AGV编号</label>
+                <input type="text" class="form-input" id="agvId" placeholder="例如: AGV-01" value="AGV-01">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">AGV名称</label>
+                <input type="text" class="form-input" id="agvName" placeholder="例如: 精拣号" value="精拣号">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">型号</label>
+                <input type="text" class="form-input" id="agvModel" placeholder="例如: X1-2000" value="X1-2000">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">颜色标识</label>
+                <div class="color-picker" id="colorPicker">
+                    <!-- 颜色选项由JavaScript生成 -->
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeAddAgvModal()">取消</button>
+                <button class="btn btn-primary" onclick="addAgv()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加路径模态框 -->
+    <div id="addPathModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-route"></i> 创建路径</h3>
+                <button class="close-modal" onclick="closeAddPathModal()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">路径名称</label>
+                <input type="text" class="form-input" id="pathName" placeholder="例如: 仓库A到包装区路径" value="新建路径">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">选择AGV</label>
+                <select class="form-select" id="pathAgvSelect">
+                    <!-- AGV选项由JavaScript生成 -->
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">路径类型</label>
+                <select class="form-select" id="newPathType">
+                    <option value="straight">直线连接</option>
+                    <option value="smooth">平滑曲线</option>
+                    <option value="grid">网格路径</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">路径描述</label>
+                <textarea class="form-textarea" id="pathDescription" placeholder="描述路径用途..." rows="3"></textarea>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeAddPathModal()">取消</button>
+                <button class="btn btn-primary" onclick="addPath()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 冲突检测结果模态框 -->
+    <div id="conflictModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> 路径冲突检测结果</h3>
+                <button class="close-modal" onclick="closeConflictModal()">×</button>
+            </div>
+            
+            <div id="conflictResults">
+                <!-- 冲突结果由JavaScript生成 -->
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="closeConflictModal()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 工具提示容器 -->
+    <div id="tooltip" class="tooltip" style="display: none;"></div>
+
+    <script>
+        // ==================== 全局变量 ====================
+        const AGV_COLORS = [
+            '#7289da', '#43b581', '#faa61a', '#f04747', '#593695',
+            '#99aab5', '#9b59b6', '#1abc9c', '#e74c3c', '#3498db'
+        ];
+        
+        let agvs = [];
+        let paths = [];
+        let selectedAgv = null;
+        let selectedPath = null;
+        let history = [];
+        let redoStack = [];
+        let showAllPaths = false;
+        let showGrid = true;
+        let isDragging = false;
+        let dragStart = null;
+        let draggedWaypoint = null;
+        
+        // 地图尺寸
+        const GRID_SIZE = 50;
+        const MAP_WIDTH = 1000;
+        const MAP_HEIGHT = 700;
+        
+        // ==================== 初始化 ====================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            initColorPicker();
+            loadSavedData();
+            initEventListeners();
+            updateStatus();
+        });
+        
+        function initMap() {
+            const canvas = document.getElementById('gridCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = MAP_WIDTH;
+            canvas.height = MAP_HEIGHT;
+            
+            drawGrid(ctx);
+        }
+        
+        function drawGrid(ctx) {
+            if (!showGrid) return;
+            
+            ctx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+            
+            // 背景
+            ctx.fillStyle = '#1a1d21';
+            ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+            
+            // 网格
+            ctx.strokeStyle = '#36393f';
+            ctx.lineWidth = 1;
+            
+            // 垂直线
+            for (let x = 0; x <= MAP_WIDTH; x += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, MAP_HEIGHT);
+                ctx.stroke();
+            }
+            
+            // 水平线
+            for (let y = 0; y <= MAP_HEIGHT; y += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(MAP_WIDTH, y);
+                ctx.stroke();
+            }
+            
+            // 坐标标签
+            ctx.fillStyle = '#8a8f98';
+            ctx.font = '10px Arial';
+            
+            for (let x = GRID_SIZE; x < MAP_WIDTH; x += GRID_SIZE) {
+                ctx.fillText(x, x - 10, 15);
+            }
+            
+            for (let y = GRID_SIZE; y < MAP_HEIGHT; y += GRID_SIZE) {
+                ctx.fillText(y, 5, y - 5);
+            }
+            
+            // 区域标注
+            ctx.fillStyle = 'rgba(114, 137, 218, 0.1)';
+            ctx.fillRect(100, 100, 200, 150);
+            ctx.fillStyle = '#7289da';
+            ctx.fillText('仓库A区', 150, 175);
+            
+            ctx.fillStyle = 'rgba(67, 181, 129, 0.1)';
+            ctx.fillRect(400, 200, 150, 100);
+            ctx.fillStyle = '#43b581';
+            ctx.fillText('包装区', 440, 250);
+            
+            ctx.fillStyle = 'rgba(250, 166, 26, 0.1)';
+            ctx.fillRect(700, 300, 200, 120);
+            ctx.fillStyle = '#faa61a';
+            ctx.fillText('装载区', 760, 360);
+        }
+        
+        function initColorPicker() {
+            const container = document.getElementById('colorPicker');
+            container.innerHTML = '';
+            
+            AGV_COLORS.forEach(color => {
+                const colorOption = document.createElement('div');
+                colorOption.className = 'color-option';
+                colorOption.style.backgroundColor = color;
+                colorOption.title = color;
+                colorOption.dataset.color = color;
+                
+                colorOption.addEventListener('click', () => {
+                    document.querySelectorAll('.color-option').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    colorOption.classList.add('selected');
+                });
+                
+                container.appendChild(colorOption);
+            });
+            
+            // 默认选择第一个颜色
+            if (container.firstChild) {
+                container.firstChild.classList.add('selected');
+            }
+        }
+        
+        function initEventListeners() {
+            const mapContainer = document.getElementById('mapContainer');
+            const canvas = document.getElementById('gridCanvas');
+            
+            // 地图点击 - 添加路径点
+            mapContainer.addEventListener('click', (e) => {
+                if (!selectedPath) {
+                    showTooltip('请先创建或选择一个路径', e.clientX, e.clientY);
+                    return;
+                }
+                
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (x >= 0 && x <= MAP_WIDTH && y >= 0 && y <= MAP_HEIGHT) {
+                    addWaypointToPath(selectedPath.id, x, y);
+                }
+            });
+            
+            // 右键菜单
+            mapContainer.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                
+                if (e.target.classList.contains('waypoint')) {
+                    const waypointId = e.target.dataset.id;
+                    removeWaypoint(selectedPath.id, waypointId);
+                }
+            });
+            
+            // 拖拽
+            document.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('waypoint')) {
+                    isDragging = true;
+                    dragStart = { x: e.clientX, y: e.clientY };
+                    draggedWaypoint = e.target;
+                    e.preventDefault();
+                }
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging && draggedWaypoint && selectedPath) {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    if (x >= 0 && x <= MAP_WIDTH && y >= 0 && y <= MAP_HEIGHT) {
+                        const waypointId = draggedWaypoint.dataset.id;
+                        moveWaypoint(selectedPath.id, waypointId, x, y);
+                    }
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    dragStart = null;
+                    
+                    if (draggedWaypoint) {
+                        saveToHistory('移动路径点');
+                        draggedWaypoint = null;
+                    }
+                }
+            });
+        }
+        
+        // ==================== AGV管理 ====================
+        
+        function showAddAgvModal() {
+            document.getElementById('addAgvModal').style.display = 'flex';
+        }
+        
+        function closeAddAgvModal() {
+            document.getElementById('addAgvModal').style.display = 'none';
+        }
+        
+        function addAgv() {
+            const id = document.getElementById('agvId').value.trim();
+            const name = document.getElementById('agvName').value.trim();
+            const model = document.getElementById('agvModel').value.trim();
+            const colorElement = document.querySelector('.color-option.selected');
+            
+            if (!id || !name) {
+                alert('请填写AGV编号和名称');
+                return;
+            }
+            
+            if (agvs.some(agv => agv.id === id)) {
+                alert(`AGV编号 "${id}" 已存在`);
+                return;
+            }
+            
+            const color = colorElement ? colorElement.dataset.color : AGV_COLORS[0];
+            
+            const agv = {
+                id,
+                name,
+                model,
+                color,
+                speed: 1.0 + Math.random() * 0.5, // 随机速度
+                battery: 80 + Math.floor(Math.random() * 20), // 随机电量
+                status: 'idle',
+                createdAt: new Date().toISOString()
+            };
+            
+            agvs.push(agv);
+            saveToHistory('添加AGV');
+            
+            updateAgvTags();
+            updateStatus();
+            closeAddAgvModal();
+            
+            // 自动选中新添加的AGV
+            selectAgv(agv.id);
+        }
+        
+        function updateAgvTags() {
+            const container = document.getElementById('agvTags');
+            container.innerHTML = '';
+            
+            agvs.forEach(agv => {
+                const tag = document.createElement('div');
+                tag.className = `agv-tag ${selectedAgv?.id === agv.id ? 'active' : ''}`;
+                tag.innerHTML = `
+                    <div class="agv-color" style="background-color: ${agv.color}"></div>
+                    <span>${agv.id}</span>
+                `;
+                
+                tag.addEventListener('click', () => selectAgv(agv.id));
+                container.appendChild(tag);
+            });
+        }
+        
+        function selectAgv(agvId) {
+            const agv = agvs.find(a => a.id === agvId);
+            if (!agv) return;
+            
+            selectedAgv = agv;
+            updateAgvTags();
+            updateAgvInfo(agv);
+            updatePathSelect();
+            
+            // 自动选择该AGV的第一个路径
+            const agvPath = paths.find(p => p.agvId === agvId);
+            if (agvPath) {
+                selectPath(agvPath.id);
+            } else {
+                selectedPath = null;
+                renderPaths();
+                renderWaypoints();
+            }
+        }
+        
+        function updateAgvInfo(agv) {
+            const container = document.getElementById('selectedAgvInfo');
+            const details = document.getElementById('agvDetails');
+            
+            container.style.display = 'block';
+            
+            details.innerHTML = `
+                <div style="margin-bottom: 0.8rem;">
+                    <div style="font-weight: bold; color: ${agv.color}; font-size: 1.1rem;">
+                        ${agv.id} - ${agv.name}
+                    </div>
+                    <div style="color: #8a8f98; font-size: 0.9rem;">型号: ${agv.model}</div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 0.5rem; border-radius: 4px;">
+                        <div style="color: #8a8f98; font-size: 0.8rem;">电量</div>
+                        <div style="color: ${agv.battery > 20 ? '#43b581' : '#f04747'}; font-weight: bold;">
+                            ${agv.battery}%
+                        </div>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 0.5rem; border-radius: 4px;">
+                        <div style="color: #8a8f98; font-size: 0.8rem;">速度</div>
+                        <div style="color: #ffffff; font-weight: bold;">
+                            ${agv.speed.toFixed(1)} m/s
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ==================== 路径管理 ====================
+        
+        function showAddPathModal() {
+            updatePathSelect();
+            document.getElementById('addPathModal').style.display = 'flex';
+        }
+        
+        function closeAddPathModal() {
+            document.getElementById('addPathModal').style.display = 'none';
+        }
+        
+        function updatePathSelect() {
+            const select = document.getElementById('pathAgvSelect');
+            select.innerHTML = '';
+            
+            agvs.forEach(agv => {
+                const option = document.createElement('option');
+                option.value = agv.id;
+                option.textContent = `${agv.id} - ${agv.name}`;
+                select.appendChild(option);
+            });
+            
+            // 默认选择当前选中的AGV
+            if (selectedAgv) {
+                select.value = selectedAgv.id;
+            }
+        }
+        
+        function addPath() {
+            const name = document.getElementById('pathName').value.trim();
+            const agvId = document.getElementById('pathAgvSelect').value;
+            const type = document.getElementById('newPathType').value;
+            const description = document.getElementById('pathDescription').value.trim();
+            
+            if (!name) {
+                alert('请输入路径名称');
+                return;
+            }
+            
+            if (!agvId) {
+                alert('请选择AGV');
+                return;
+            }
+            
+            const agv = agvs.find(a => a.id === agvId);
+            if (!agv) {
+                alert('选择的AGV不存在');
+                return;
+            }
+            
+            const path = {
+                id: `path-${Date.now()}`,
+                name,
+                agvId,
+                agvName: agv.name,
+                agvColor: agv.color,
+                type,
+                description,
+                waypoints: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            paths.push(path);
+            saveToHistory('创建路径');
+            
+            selectPath(path.id);
+            closeAddPathModal();
+            renderPaths();
+            updateStatus();
+        }
+        
+        function selectPath(pathId) {
+            const path = paths.find(p => p.id === pathId);
+            if (!path) return;
+            
+            selectedPath = path;
+            
+            // 确保选中的AGV与路径对应
+            const agv = agvs.find(a => a.id === path.agvId);
+            if (agv && agv.id !== selectedAgv?.id) {
+                selectAgv(agv.id);
+            }
+            
+            renderPaths();
+            renderWaypoints();
+            updatePath();
+        }
+        
+        function renderPaths() {
+            const container = document.getElementById('agvPathsList');
+            container.innerHTML = '';
+            
+            paths.forEach(path => {
+                const agv = agvs.find(a => a.id === path.agvId);
+                if (!agv) return;
+                
+                const item = document.createElement('div');
+                item.className = `agv-path-item ${selectedPath?.id === path.id ? 'active' : ''}`;
+                item.innerHTML = `
+                    <div class="agv-path-header">
+                        <div class="agv-path-title">
+                            <div class="agv-color" style="background-color: ${agv.color}"></div>
+                            <div class="agv-path-name">${path.name}</div>
+                            <div class="agv-path-count">${path.waypoints.length}</div>
+                        </div>
+                        <div class="agv-path-actions">
+                            <button class="path-action-btn" onclick="editPath('${path.id}')" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="path-action-btn" onclick="deletePath('${path.id}')" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="agv-path-details">
+                        <div>AGV: ${agv.id}</div>
+                        <div>类型: ${getPathTypeText(path.type)}</div>
+                    </div>
+                `;
+                
+                item.addEventListener('click', () => selectPath(path.id));
+                container.appendChild(item);
+            });
+        }
+        
+        function getPathTypeText(type) {
+            const types = {
+                'straight': '直线',
+                'smooth': '平滑曲线',
+                'grid': '网格'
+            };
+            return types[type] || type;
+        }
+        
+        function editPath(pathId) {
+            const path = paths.find(p => p.id === pathId);
+            if (!path) return;
+            
+            const newName = prompt('请输入新的路径名称:', path.name);
+            if (newName && newName.trim()) {
+                path.name = newName.trim();
+                path.updatedAt = new Date().toISOString();
+                saveToHistory('重命名路径');
+                renderPaths();
+            }
+        }
+        
+        function deletePath(pathId) {
+            if (!confirm('确定要删除这个路径吗？')) return;
+            
+            const index = paths.findIndex(p => p.id === pathId);
+            if (index !== -1) {
+                paths.splice(index, 1);
+                saveToHistory('删除路径');
+                
+                if (selectedPath?.id === pathId) {
+                    selectedPath = null;
+                }
+                
+                renderPaths();
+                renderWaypoints();
+                updatePath();
+                updateStatus();
+            }
+        }
+        
+        // ==================== 路径点管理 ====================
+        
+        function addWaypointToPath(pathId, x, y) {
+            const path = paths.find(p => p.id === pathId);
+            if (!path) return;
+            
+            const agv = agvs.find(a => a.id === path.agvId);
+            if (!agv) return;
+            
+            const id = `wp-${Date.now()}-${path.waypoints.length}`;
+            const name = `点${path.waypoints.length + 1}`;
+            
+            const waypoint = {
+                id,
+                name,
+                x: Math.round(x / GRID_SIZE) * GRID_SIZE,
+                y: Math.round(y / GRID_SIZE) * GRID_SIZE,
+                agvId: agv.id,
+                agvName: agv.name,
+                agvColor: agv.color,
+                type: path.waypoints.length === 0 ? 'start' : 
+                      path.waypoints.length === 0 ? 'end' : 'normal',
+                index: path.waypoints.length
+            };
+            
+            path.waypoints.push(waypoint);
+            path.updatedAt = new Date().toISOString();
+            
+            saveToHistory('添加路径点');
+            renderWaypoints();
+            updatePath();
+            updateStatus();
+        }
+        
+        function removeWaypoint(pathId, waypointId) {
+            const path = paths.find(p => p.id === pathId);
+            if (!path) return;
+            
+            const index = path.waypoints.findIndex(w => w.id === waypointId);
+            if (index !== -1) {
+                path.waypoints.splice(index, 1);
+                path.updatedAt = new Date().toISOString();
+                
+                // 更新索引
+                path.waypoints.forEach((wp, i) => {
+                    wp.index = i;
+                    wp.name = `点${i + 1}`;
+                });
+                
+                saveToHistory('删除路径点');
+                renderWaypoints();
+                updatePath();
+                updateStatus();
+            }
+        }
+        
+        function moveWaypoint(pathId, waypointId, x, y) {
+            const path = paths.find(p => p.id === pathId);
+            if (!path) return;
+            
+            const waypoint = path.waypoints.find(w => w.id === waypointId);
+            if (waypoint) {
+                waypoint.x = Math.round(x / GRID_SIZE) * GRID_SIZE;
+                waypoint.y = Math.round(y / GRID_SIZE) * GRID_SIZE;
+                
+                renderWaypoints();
+                updatePath();
+            }
+        }
+        
+        function renderWaypoints() {
+            const container = document.getElementById('waypointsContainer');
+            const list = document.getElementById('waypointList');
+            
+            container.innerHTML = '';
+            list.innerHTML = '';
+            
+            // 获取要显示的路径点
+            const displayPaths = showAllPaths ? paths : (selectedPath ? [selectedPath] : []);
+            const allWaypoints = [];
+            
+            displayPaths.forEach(path => {
+                path.waypoints.forEach(waypoint => {
+                    allWaypoints.push({...waypoint, pathId: path.id});
+                });
+            });
+            
+            // 更新空状态
+            const emptyState = document.getElementById('emptyState');
+            emptyState.style.display = allWaypoints.length > 0 ? 'none' : 'flex';
+            
+            // 在地图上渲染路径点
+            allWaypoints.forEach(wp => {
+                const waypointElement = document.createElement('div');
+                waypointElement.className = `waypoint ${wp.type}`;
+                waypointElement.style.left = `${wp.x}px`;
+                waypointElement.style.top = `${wp.y}px`;
+                waypointElement.style.backgroundColor = wp.agvColor;
+                waypointElement.style.color = getContrastColor(wp.agvColor);
+                waypointElement.dataset.id = wp.id;
+                waypointElement.dataset.pathId = wp.pathId;
+                waypointElement.title = `${wp.agvName} - ${wp.name}`;
+                
+                // 添加索引数字
+                const indexSpan = document.createElement('span');
+                indexSpan.textContent = wp.index + 1;
+                waypointElement.appendChild(indexSpan);
+                
+                // 添加标签
+                const label = document.createElement('div');
+                label.className = 'waypoint-label';
+                label.textContent = `${wp.agvName}: ${wp.name}`;
+                waypointElement.appendChild(label);
+                
+                // AGV名称
+                const agvName = document.createElement('div');
+                agvName.className = 'waypoint-agv-name';
+                agvName.textContent = wp.agvName;
+                waypointElement.appendChild(agvName);
+                
+                // 点击事件
+                waypointElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showPathInfo(wp.pathId, wp.id);
+                });
+                
+                container.appendChild(waypointElement);
+            });
+            
+            // 在列表中渲染当前路径的路径点
+            if (selectedPath) {
+                selectedPath.waypoints.forEach(wp => {
+                    const item = document.createElement('div');
+                    item.className = 'waypoint-item';
+                    item.draggable = true;
+                    item.dataset.id = wp.id;
+                    
+                    item.innerHTML = `
+                        <div class="waypoint-index" style="background-color: ${wp.agvColor}">${wp.index + 1}</div>
+                        <div class="waypoint-content">
+                            <div class="waypoint-name">${wp.name}</div>
+                            <div class="waypoint-coords">(${wp.x}, ${wp.y})</div>
+                        </div>
+                        <div style="display: flex; gap: 0.3rem;">
+                            <button class="path-action-btn" onclick="editWaypointName('${selectedPath.id}', '${wp.id}')" title="重命名">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="path-action-btn" onclick="removeWaypoint('${selectedPath.id}', '${wp.id}')" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    
+                    // 拖拽排序
+                    item.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', wp.id);
+                    });
+                    
+                    item.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                    });
+                    
+                    item.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        const draggedId = e.dataTransfer.getData('text/plain');
+                        reorderWaypoints(selectedPath.id, draggedId, wp.id);
+                    });
+                    
+                    list.appendChild(item);
+                });
+            }
+        }
+        
+        function editWaypointName(pathId, waypointId) {
+            const path = paths.find(p => p.id === pathId);
+            if (!path) return;
+            
+            const waypoint = path.waypoints.find(w => w.id === waypointId);
+            if (!waypoint) return;
+            
+            const newName = prompt('请输入新的路径点名称:', waypoint.name);
+            if (newName && newName.trim()) {
+                waypoint.name = newName.trim();
+                path.updatedAt = new Date().toISOString();
+                saveToHistory('重命名路径点');
+                renderWaypoints();
+            }
+        }
+        
+        function reorderWaypoints(pathId, draggedId, targetId) {
+            const path = paths.find(p => p.id === pathId);
+            if (!path) return;
+            
+            const draggedIndex = path.waypoints.findIndex(w => w.id === draggedId);
+            const targetIndex = path.waypoints.findIndex(w => w.id === targetId);
+            
+            if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
+                const [moved] = path.waypoints.splice(draggedIndex, 1);
+                path.waypoints.splice(targetIndex, 0, moved);
+                
+                // 更新索引和名称
+                path.waypoints.forEach((wp, i) => {
+                    wp.index = i;
+                    wp.name = `点${i + 1}`;
+                });
+                
+                path.updatedAt = new Date().toISOString();
+                saveToHistory('重新排序路径点');
+                renderWaypoints();
+                updatePath();
+            }
+        }
+        
+        // ==================== 路径绘制 ====================
+        
+        function updatePath() {
+            const container = document.getElementById('pathsOverlay');
+            container.innerHTML = '';
+            
+            const displayPaths = showAllPaths ? paths : (selectedPath ? [selectedPath] : []);
+            
+            if (displayPaths.length === 0) return;
+            
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, "svg");
+            
+            displayPaths.forEach(path => {
+                if (path.waypoints.length < 2) return;
+                
+                const agv = agvs.find(a => a.id === path.agvId);
+                if (!agv) return;
+                
+                const pathElement = document.createElementNS(svgNS, "path");
+                let pathData = '';
+                
+                switch (path.type) {
+                    case 'straight':
+                        pathData = path.waypoints.map((wp, i) => 
+                            `${i === 0 ? 'M' : 'L'} ${wp.x} ${wp.y}`
+                        ).join(' ');
+                        break;
+                        
+                    case 'smooth':
+                        if (path.waypoints.length >= 3) {
+                            pathData = `M ${path.waypoints[0].x} ${path.waypoints[0].y} C `;
+                            
+                            for (let i = 1; i < path.waypoints.length; i++) {
+                                const prev = path.waypoints[i - 1];
+                                const curr = path.waypoints[i];
+                                const cp1x = prev.x + (curr.x - prev.x) * 0.3;
+                                const cp1y = prev.y;
+                                const cp2x = prev.x + (curr.x - prev.x) * 0.7;
+                                const cp2y = curr.y;
+                                
+                                pathData += `${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${curr.x} ${curr.y} `;
+                            }
+                        } else {
+                            pathData = path.waypoints.map((wp, i) => 
+                                `${i === 0 ? 'M' : 'L'} ${wp.x} ${wp.y}`
+                            ).join(' ');
+                        }
+                        break;
+                        
+                    case 'grid':
+                        pathData = `M ${path.waypoints[0].x} ${path.waypoints[0].y}`;
+                        for (let i = 1; i < path.waypoints.length; i++) {
+                            const prev = path.waypoints[i - 1];
+                            const curr = path.waypoints[i];
+                            
+                            if (prev.x !== curr.x) {
+                                pathData += ` H ${curr.x}`;
+                            }
+                            if (prev.y !== curr.y) {
+                                pathData += ` V ${curr.y}`;
+                            }
+                        }
+                        break;
+                }
+                
+                pathElement.setAttribute("d", pathData);
+                pathElement.setAttribute("stroke", agv.color);
+                pathElement.setAttribute("stroke-width", "3");
+                pathElement.setAttribute("fill", "none");
+                pathElement.setAttribute("stroke-linecap", "round");
+                pathElement.setAttribute("stroke-linejoin", "round");
+                pathElement.setAttribute("opacity", path.id === selectedPath?.id ? "1" : "0.6");
+                pathElement.setAttribute("data-path-id", path.id);
+                
+                // 添加动画
+                const length = pathElement.getTotalLength();
+                pathElement.style.strokeDasharray = `${length / 20} ${length / 20}`;
+                pathElement.style.strokeDashoffset = 0;
+                pathElement.style.animation = "dash 5s linear infinite";
+                
+                // 点击路径显示信息
+                pathElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectPath(path.id);
+                });
+                
+                // 鼠标悬停效果
+                pathElement.addEventListener('mouseenter', () => {
+                    pathElement.setAttribute("stroke-width", "5");
+                });
+                
+                pathElement.addEventListener('mouseleave', () => {
+                    pathElement.setAttribute("stroke-width", "3");
+                });
+                
+                svg.appendChild(pathElement);
+            });
+            
+            container.appendChild(svg);
+            
+            // 添加CSS动画
+            if (!document.getElementById('path-animation')) {
+                const style = document.createElement('style');
+                style.id = 'path-animation';
+                style.textContent = `
+                    @keyframes dash {
+                        to {
+                            stroke-dashoffset: -1000;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        function updateSelectedPath() {
+            if (!selectedPath) return;
+            
+            selectedPath.type = document.getElementById('pathType').value;
+            selectedPath.updatedAt = new Date().toISOString();
+            
+            saveToHistory('修改路径类型');
+            updatePath();
+        }
+        
+        // ==================== 路径信息显示 ====================
+        
+        function showPathInfo(pathId, waypointId = null) {
+            const path = paths.find(p => p.id === pathId);
+            if (!path) return;
+            
+            const agv = agvs.find(a => a.id === path.agvId);
+            if (!agv) return;
+            
+            const waypoint = waypointId ? 
+                path.waypoints.find(w => w.id === waypointId) : null;
+            
+            const panel = document.getElementById('pathInfoPanel');
+            const content = document.getElementById('pathInfoContent');
+            
+            let html = `
+                <div class="path-info-item">
+                    <div class="path-info-label">路径名称</div>
+                    <div class="path-info-value">${path.name}</div>
+                </div>
+                
+                <div class="path-info-item">
+                    <div class="path-info-label">AGV</div>
+                    <div class="path-info-value" style="color: ${agv.color}">
+                        ${agv.id} - ${agv.name}
+                    </div>
+                </div>
+                
+                <div class="path-info-item">
+                    <div class="path-info-label">路径类型</div>
+                    <div class="path-info-value">${getPathTypeText(path.type)}</div>
+                </div>
+                
+                <div class="path-info-item">
+                    <div class="path-info-label">路径点数量</div>
+                    <div class="path-info-value">${path.waypoints.length} 个</div>
+                </div>
+                
+                <div class="path-info-item">
+                    <div class="path-info-label">路径长度</div>
+                    <div class="path-info-value">${calculatePathLength(path.waypoints).toFixed(1)} 米</div>
+                </div>
+            `;
+            
+            if (waypoint) {
+                html += `
+                    <hr style="border: none; border-top: 1px solid #40444b; margin: 0.8rem 0;">
+                    
+                    <div class="path-info-item">
+                        <div class="path-info-label">路径点</div>
+                        <div class="path-info-value">${waypoint.name}</div>
+                    </div>
+                    
+                    <div class="path-info-item">
+                        <div class="path-info-label">坐标</div>
+                        <div class="path-info-value">(${waypoint.x}, ${waypoint.y})</div>
+                    </div>
+                    
+                    <div class="path-info-item">
+                        <div class="path-info-label">顺序</div>
+                        <div class="path-info-value">第 ${waypoint.index + 1} 个</div>
+                    </div>
+                `;
+            }
+            
+            if (path.description) {
+                html += `
+                    <hr style="border: none; border-top: 1px solid #40444b; margin: 0.8rem 0;">
+                    
+                    <div class="path-info-item">
+                        <div class="path-info-label">描述</div>
+                        <div class="path-info-value">${path.description}</div>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = html;
+            panel.style.display = 'block';
+        }
+        
+        function closePathInfo() {
+            document.getElementById('pathInfoPanel').style.display = 'none';
+        }
+        
+        // ==================== 冲突检测 ====================
+        
+        function checkConflicts() {
+            const conflicts = [];
+            
+            // 检查路径交叉
+            for (let i = 0; i < paths.length; i++) {
+                for (let j = i + 1; j < paths.length; j++) {
+                    const path1 = paths[i];
+                    const path2 = paths[j];
+                    
+                    if (path1.waypoints.length < 2 || path2.waypoints.length < 2) continue;
+                    
+                    for (let k = 0; k < path1.waypoints.length - 1; k++) {
+                        for (let l = 0; l < path2.waypoints.length - 1; l++) {
+                            const p1 = path1.waypoints[k];
+                            const p2 = path1.waypoints[k + 1];
+                            const p3 = path2.waypoints[l];
+                            const p4 = path2.waypoints[l + 1];
+                            
+                            if (doLinesIntersect(p1, p2, p3, p4)) {
+                                conflicts.push({
+                                    type: '交叉',
+                                    path1: path1.name,
+                                    path2: path2.name,
+                                    location: {
+                                        x: (p1.x + p2.x + p3.x + p4.x) / 4,
+                                        y: (p1.y + p2.y + p3.y + p4.y) / 4
+                                    },
+                                    description: `路径 "${path1.name}" 和 "${path2.name}" 在(${Math.round((p1.x + p2.x + p3.x + p4.x) / 4)}, ${Math.round((p1.y + p2.y + p3.y + p4.y) / 4)})处交叉`
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 检查路径点过近
+            const allWaypoints = [];
+            paths.forEach(path => {
+                path.waypoints.forEach(wp => {
+                    allWaypoints.push({...wp, pathName: path.name});
+                });
+            });
+            
+            for (let i = 0; i < allWaypoints.length; i++) {
+                for (let j = i + 1; j < allWaypoints.length; j++) {
+                    const wp1 = allWaypoints[i];
+                    const wp2 = allWaypoints[j];
+                    
+                    if (wp1.pathName === wp2.pathName) continue;
+                    
+                    const distance = Math.sqrt(
+                        Math.pow(wp1.x - wp2.x, 2) + Math.pow(wp1.y - wp2.y, 2)
+                    );
+                    
+                    if (distance < 30) { // 30像素内认为过近
+                        conflicts.push({
+                            type: '过近',
+                            path1: wp1.pathName,
+                            path2: wp2.pathName,
+                            location: { x: (wp1.x + wp2.x) / 2, y: (wp1.y + wp2.y) / 2 },
+                            description: `路径 "${wp1.pathName}" 和 "${wp2.pathName}" 的路径点距离过近 (${Math.round(distance)}像素)`
+                        });
+                    }
+                }
+            }
+            
+            showConflictResults(conflicts);
+        }
+        
+        function doLinesIntersect(p1, p2, p3, p4) {
+            // 线段相交检测算法
+            const denominator = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
+            if (denominator === 0) return false;
+            
+            const ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+            const ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+            
+            return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
+        }
+        
+        function showConflictResults(conflicts) {
+            const container = document.getElementById('conflictResults');
+            
+            if (conflicts.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #43b581;">
+                        <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <h3>无路径冲突</h3>
+                        <p>所有路径规划正常，无交叉或过近问题</p>
+                    </div>
+                `;
+            } else {
+                let html = `
+                    <div class="conflict-warning">
+                        <h4><i class="fas fa-exclamation-triangle"></i> 发现 ${conflicts.length} 个冲突</h4>
+                        <div class="conflict-list">
+                `;
+                
+                conflicts.forEach((conflict, index) => {
+                    html += `
+                        <div style="margin-bottom: 0.5rem;">
+                            <div style="color: #f04747; font-weight: bold;">
+                                ${index + 1}. ${conflict.type}冲突
+                            </div>
+                            <div style="color: #ffffff;">${conflict.description}</div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+            }
+            
+            // 更新状态栏
+            const statusElement = document.getElementById('conflictStatus');
+            if (conflicts.length > 0) {
+                statusElement.textContent = `${conflicts.length}个冲突`;
+                statusElement.style.color = '#f04747';
+            } else {
+                statusElement.textContent = '无冲突';
+                statusElement.style.color = '#43b581';
+            }
+            
+            document.getElementById('conflictModal').style.display = 'flex';
+        }
+        
+        function closeConflictModal() {
+            document.getElementById('conflictModal').style.display = 'none';
+        }
+        
+        // ==================== 工具函数 ====================
+        
+        function getContrastColor(hexColor) {
+            // 计算颜色亮度，返回黑色或白色
+            const r = parseInt(hexColor.substr(1, 2), 16);
+            const g = parseInt(hexColor.substr(3, 2), 16);
+            const b = parseInt(hexColor.substr(5, 2), 16);
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128 ? '#000000' : '#ffffff';
+        }
+        
+        function calculatePathLength(waypoints) {
+            let length = 0;
+            for (let i = 1; i < waypoints.length; i++) {
+                const dx = waypoints[i].x - waypoints[i-1].x;
+                const dy = waypoints[i].y - waypoints[i-1].y;
+                length += Math.sqrt(dx * dx + dy * dy);
+            }
+            return length * 0.1; // 转换为米
+        }
+        
+        function toggleGrid() {
+            showGrid = document.getElementById('showGrid').checked;
+            const canvas = document.getElementById('gridCanvas');
+            const ctx = canvas.getContext('2d');
+            drawGrid(ctx);
+        }
+        
+        function toggleAllPaths() {
+            showAllPaths = document.getElementById('showAllPaths').checked;
+            renderWaypoints();
+            updatePath();
+        }
+        
+        function showTooltip(message, x, y) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.textContent = message;
+            tooltip.style.left = `${x + 10}px`;
+            tooltip.style.top = `${y + 10}px`;
+            tooltip.style.display = 'block';
+            
+            setTimeout(() => {
+                tooltip.style.display = 'none';
+            }, 2000);
+        }
+        
+        function updateStatus() {
+            document.getElementById('agvCount').textContent = agvs.length;
+            document.getElementById('pathCount').textContent = paths.length;
+            
+            const totalWaypoints = paths.reduce((sum, path) => sum + path.waypoints.length, 0);
+            document.getElementById('totalWaypoints').textContent = totalWaypoints;
+            
+            if (selectedPath) {
+                document.getElementById('statusText').textContent = `编辑: ${selectedPath.name}`;
+            } else if (selectedAgv) {
+                document.getElementById('statusText').textContent = `选中: ${selectedAgv.id}`;
+            } else {
+                document.getElementById('statusText').textContent = '就绪';
+            }
+        }
+        
+        // ==================== 历史记录 ====================
+        
+        function saveToHistory(action) {
+            history.push({
+                action,
+                timestamp: new Date().toISOString(),
+                agvs: JSON.parse(JSON.stringify(agvs)),
+                paths: JSON.parse(JSON.stringify(paths)),
+                selectedAgvId: selectedAgv?.id,
+                selectedPathId: selectedPath?.id
+            });
+            
+            if (history.length > 20) history.shift();
+            redoStack = [];
+        }
+        
+        function undo() {
+            if (history.length > 1) {
+                const current = history.pop();
+                redoStack.push(current);
+                
+                const previous = history[history.length - 1];
+                agvs = JSON.parse(JSON.stringify(previous.agvs));
+                paths = JSON.parse(JSON.stringify(previous.paths));
+                
+                selectedAgv = agvs.find(a => a.id === previous.selectedAgvId) || null;
+                selectedPath = paths.find(p => p.id === previous.selectedPathId) || null;
+                
+                updateAgvTags();
+                if (selectedAgv) updateAgvInfo(selectedAgv);
+                renderPaths();
+                renderWaypoints();
+                updatePath();
+                updateStatus();
+            }
+        }
+        
+        function redo() {
+            if (redoStack.length > 0) {
+                const next = redoStack.pop();
+                history.push(next);
+                
+                agvs = JSON.parse(JSON.stringify(next.agvs));
+                paths = JSON.parse(JSON.stringify(next.paths));
+                
+                selectedAgv = agvs.find(a => a.id === next.selectedAgvId) || null;
+                selectedPath = paths.find(p => p.id === next.selectedPathId) || null;
+                
+                updateAgvTags();
+                if (selectedAgv) updateAgvInfo(selectedAgv);
+                renderPaths();
+                renderWaypoints();
+                updatePath();
+                updateStatus();
+            }
+        }
+        
+        // ==================== 数据保存和加载 ====================
+        
+        function saveAllPaths() {
+            const data = {
+                agvs,
+                paths,
+                savedAt: new Date().toISOString(),
+                version: '1.0'
+            };
+            
+            localStorage.setItem('agvMultiPathData', JSON.stringify(data));
+            alert(`保存成功！已保存 ${agvs.length} 个AGV和 ${paths.length} 条路径`);
+        }
+        
+        function loadSavedData() {
+            const saved = localStorage.getItem('agvMultiPathData');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    agvs = data.agvs || [];
+                    paths = data.paths || [];
+                    
+                    updateAgvTags();
+                    renderPaths();
+                    renderWaypoints();
+                    updatePath();
+                    updateStatus();
+                } catch (e) {
+                    console.error('加载保存的数据失败:', e);
+                }
+            }
+        }
+        
+        function exportAllPaths() {
+            const data = {
+                agvs,
+                paths,
+                exportedAt: new Date().toISOString(),
+                version: '1.0'
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `agv-multi-paths-${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            alert(`已导出 ${agvs.length} 个AGV和 ${paths.length} 条路径配置`);
+        }
+        
+        function resetAll() {
+            if (!confirm('确定要重置所有数据吗？这将清除所有AGV、路径和设置。此操作不可撤销！')) {
+                return;
+            }
+            
+            agvs = [];
+            paths = [];
+            selectedAgv = null;
+            selectedPath = null;
+            history = [];
+            redoStack = [];
+            
+            updateAgvTags();
+            document.getElementById('selectedAgvInfo').style.display = 'none';
+            renderPaths();
+            renderWaypoints();
+            updatePath();
+            updateStatus();
+            
+            // 清除本地存储
+            localStorage.removeItem('agvMultiPathData');
+            
+            // 重新初始化网格
+            const canvas = document.getElementById('gridCanvas');
+            const ctx = canvas.getContext('2d');
+            drawGrid(ctx);
+            
+            alert('已重置所有数据');
+        }
+        
+        // ==================== 键盘快捷键 ====================
+        
+        document.addEventListener('keydown', (e) => {
+            // 屏蔽在输入框中的快捷键
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                return;
+            }
+            
+            // Ctrl+Z: 撤销
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            }
+            
+            // Ctrl+Y: 重做
+            if (e.ctrlKey && e.key === 'y') {
+                e.preventDefault();
+                redo();
+            }
+            
+            // Ctrl+S: 保存
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveAllPaths();
+            }
+            
+            // Delete: 删除选中的路径点
+            if (e.key === 'Delete' && selectedPath && draggedWaypoint) {
+                const waypointId = draggedWaypoint.dataset.id;
+                removeWaypoint(selectedPath.id, waypointId);
+            }
+            
+            // 数字键1-9: 快速选择路径
+            if (e.key >= '1' && e.key <= '9') {
+                const index = parseInt(e.key) - 1;
+                if (index < paths.length) {
+                    selectPath(paths[index].id);
+                }
+            }
+            
+            // G: 切换网格显示
+            if (e.key === 'g' || e.key === 'G') {
+                const checkbox = document.getElementById('showGrid');
+                checkbox.checked = !checkbox.checked;
+                toggleGrid();
+            }
+            
+            // A: 显示所有路径
+            if (e.key === 'a' || e.key === 'A') {
+                const checkbox = document.getElementById('showAllPaths');
+                checkbox.checked = !checkbox.checked;
+                toggleAllPaths();
+            }
+            
+            // C: 检查冲突
+            if (e.key === 'c' || e.key === 'C') {
+                checkConflicts();
+            }
+        });
+        
+        // 页面卸载前提示保存
+        window.addEventListener('beforeunload', (e) => {
+            if (agvs.length > 0 || paths.length > 0) {
+                e.preventDefault();
+                e.returnValue = '您有未保存的路径配置，确定要离开吗？';
+            }
+        });
+        
+        // 添加一些示例数据用于演示
+        function addDemoData() {
+            if (agvs.length > 0) return; // 如果已经有数据就不添加
+            
+            // 添加3个示例AGV
+            agvs = [
+                {
+                    id: "AGV-01",
+                    name: "精拣号",
+                    model: "X1-2000",
+                    color: "#7289da",
+                    speed: 1.2,
+                    battery: 85,
+                    status: "idle",
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: "AGV-02",
+                    name: "迅捷二号",
+                    model: "X1-2000",
+                    color: "#43b581",
+                    speed: 1.5,
+                    battery: 92,
+                    status: "idle",
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: "AGV-03",
+                    name: "大力三号",
+                    model: "X2-3000",
+                    color: "#faa61a",
+                    speed: 0.8,
+                    battery: 45,
+                    status: "running",
+                    createdAt: new Date().toISOString()
+                }
+            ];
+            
+            // 添加示例路径
+            paths = [
+                {
+                    id: "path-1",
+                    name: "仓库A到包装区",
+                    agvId: "AGV-01",
+                    agvName: "精拣号",
+                    agvColor: "#7289da",
+                    type: "straight",
+                    description: "从仓库A区运输货物到包装区",
+                    waypoints: [
+                        {id: "wp-1", name: "起点", x: 150, y: 175, agvId: "AGV-01", agvName: "精拣号", agvColor: "#7289da", type: "start", index: 0},
+                        {id: "wp-2", name: "中转点", x: 300, y: 250, agvId: "AGV-01", agvName: "精拣号", agvColor: "#7289da", type: "normal", index: 1},
+                        {id: "wp-3", name: "终点", x: 475, y: 250, agvId: "AGV-01", agvName: "精拣号", agvColor: "#7289da", type: "end", index: 2}
+                    ],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
+                {
+                    id: "path-2",
+                    name: "包装区到装载区",
+                    agvId: "AGV-02",
+                    agvName: "迅捷二号",
+                    agvColor: "#43b581",
+                    type: "smooth",
+                    description: "从包装区运输到装载区，需要绕过障碍",
+                    waypoints: [
+                        {id: "wp-4", name: "起点", x: 475, y: 250, agvId: "AGV-02", agvName: "迅捷二号", agvColor: "#43b581", type: "start", index: 0},
+                        {id: "wp-5", name: "中转点1", x: 600, y: 200, agvId: "AGV-02", agvName: "迅捷二号", agvColor: "#43b581", type: "normal", index: 1},
+                        {id: "wp-6", name: "中转点2", x: 750, y: 300, agvId: "AGV-02", agvName: "迅捷二号", agvColor: "#43b581", type: "normal", index: 2},
+                        {id: "wp-7", name: "终点", x: 800, y: 360, agvId: "AGV-02", agvName: "迅捷二号", agvColor: "#43b581", type: "end", index: 3}
+                    ],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
+                {
+                    id: "path-3",
+                    name: "仓库巡视路径",
+                    agvId: "AGV-03",
+                    agvName: "大力三号",
+                    agvColor: "#faa61a",
+                    type: "grid",
+                    description: "巡视仓库各区域的固定路径",
+                    waypoints: [
+                        {id: "wp-8", name: "起点", x: 150, y: 400, agvId: "AGV-03", agvName: "大力三号", agvColor: "#faa61a", type: "start", index: 0},
+                        {id: "wp-9", name: "检查点1", x: 350, y: 400, agvId: "AGV-03", agvName: "大力三号", agvColor: "#faa61a", type: "normal", index: 1},
+                        {id: "wp-10", name: "检查点2", x: 350, y: 550, agvId: "AGV-03", agvName: "大力三号", agvColor: "#faa61a", type: "normal", index: 2},
+                        {id: "wp-11", name: "检查点3", x: 600, y: 550, agvId: "AGV-03", agvName: "大力三号", agvColor: "#faa61a", type: "normal", index: 3},
+                        {id: "wp-12", name: "终点", x: 150, y: 550, agvId: "AGV-03", agvName: "大力三号", agvColor: "#faa61a", type: "end", index: 4}
+                    ],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            ];
+            
+            // 更新UI
+            updateAgvTags();
+            selectAgv("AGV-01");
+            renderPaths();
+            renderWaypoints();
+            updatePath();
+            updateStatus();
+            
+            // 隐藏空状态
+            document.getElementById('emptyState').style.display = 'none';
+        }
+        
+        // 页面加载完成后自动添加示例数据
+        setTimeout(() => {
+            if (agvs.length === 0 && paths.length === 0) {
+                if (confirm('是否加载示例数据进行演示？')) {
+                    addDemoData();
+                }
+            }
+        }, 1000);
+        
+        // 帮助对话框
+        function showHelp() {
+            alert(`
+            🎯 AGV多路径规划系统使用说明
+            
+            1. 添加AGV
+            - 点击"添加AGV"按钮创建新的AGV
+            - 设置AGV编号、名称、型号和颜色标识
+            
+            2. 创建路径
+            - 选择AGV后，点击"新建路径"创建路径
+            - 设置路径名称、类型和描述
+            
+            3. 添加路径点
+            - 选中路径后，在地图上点击添加路径点
+            - 右键点击路径点可删除
+            - 拖拽路径点可调整位置
+            - 在列表中拖拽可重新排序
+            
+            4. 路径设置
+            - 直线连接：路径点之间用直线连接
+            - 平滑曲线：贝塞尔曲线平滑连接
+            - 网格路径：只走水平和垂直线
+            
+            5. 快捷键
+            - Ctrl+Z: 撤销
+            - Ctrl+Y: 重做
+            - Ctrl+S: 保存
+            - Delete: 删除选中的路径点
+            - 数字键1-9: 快速选择路径
+            - G: 切换网格显示
+            - A: 显示/隐藏所有路径
+            - C: 检查路径冲突
+            
+            6. 功能
+            - 保存配置：保存到浏览器本地存储
+            - 导出配置：导出为JSON文件
+            - 冲突检测：检查路径交叉和过近问题
+            - 重置全部：清除所有数据
+            
+            7. 路径点信息
+            - 每个路径点都关联到特定的AGV
+            - 不同AGV的路径用不同颜色显示
+            - 点击路径点查看详细信息
+            - 路径交汇点会自动标记
+            `);
+        }
+        
+        // 添加帮助按钮到标题栏
+        const header = document.querySelector('.header');
+        const helpBtn = document.createElement('button');
+        helpBtn.className = 'btn btn-secondary';
+        helpBtn.innerHTML = '<i class="fas fa-question-circle"></i> 帮助';
+        helpBtn.onclick = showHelp;
+        header.querySelector('.header-actions').insertBefore(helpBtn, header.querySelector('.header-actions').firstChild);
+    </script>
+</body>
+</html>
